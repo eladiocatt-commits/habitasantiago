@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -12,6 +12,19 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Componente para forzar a Leaflet a redibujar el mapa correctamente en móviles
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    if (!map) return;
+    const timer = setTimeout(() => {
+      map.invalidateSize(true);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+  return null;
+}
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -23,6 +36,7 @@ export default function App() {
   const [resenas, setResenas] = useState([]);
   const [cargandoResenas, setCargandoResenas] = useState(false);
   
+  // Filtros por Comuna y Rating
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
 
@@ -187,6 +201,7 @@ export default function App() {
     setEnviando(false);
   };
 
+  // Filtrado por texto, comuna y calificación
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
                        e.comuna.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -227,7 +242,7 @@ export default function App() {
             }}
             className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1 transition shadow-lg shadow-indigo-600/30"
           >
-            <Plus className="w-3.5 h-3.5" /> Nuevo Edificio
+            <PlusCircle className="w-3.5 h-3.5" /> Nuevo Edificio
           </button>
 
           {session ? (
@@ -285,14 +300,15 @@ export default function App() {
         </div>
       </div>
 
-      {/* 3. MAPA PRINCIPAL CON CONTENEDOR ESTABLE */}
-      <div className="w-full h-full absolute inset-0 z-0">
+      {/* 3. MAPA PRINCIPAL */}
+      <div className="absolute inset-0 w-full h-full z-0">
         <MapContainer 
           center={[-33.4489, -70.6693]} 
           zoom={13} 
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
         >
+          <MapResizer />
           <TileLayer
             attribution='&copy; OpenStreetMap'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -320,7 +336,7 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* 4. TARJETA INFERIOR DESLIZANTE */}
+      {/* 4. TARJETA INFERIOR DESLIZANTE CON ANIMACIÓN */}
       {edificioSeleccionado && (
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
           <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/80 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
