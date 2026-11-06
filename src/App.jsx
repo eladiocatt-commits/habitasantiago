@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';import L from 'leaflet';
 import { 
   Star, MapPin, Building, Search, Plus, X, CheckCircle2, MessageSquare, PlusCircle, Upload, Map as MapIcon, List, LogIn, LogOut, User, DollarSign, Filter
 } from 'lucide-react';
