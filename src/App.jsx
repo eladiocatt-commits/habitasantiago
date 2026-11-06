@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { 
   Star, MapPin, Building, Search, Plus, X, CheckCircle2, MessageSquare, PlusCircle, Upload, Map as MapIcon, List, LogIn, LogOut, User, DollarSign, Filter
 } from 'lucide-react';
@@ -12,14 +13,20 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Componente auxiliar para forzar a Leaflet a redibujar el mapa correctamente en móviles
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
     if (!map) return;
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
+    const interval = setInterval(() => {
+      map.invalidateSize(true);
+    }, 300);
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+    }, 1500);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [map]);
   return null;
 }
@@ -210,11 +217,10 @@ export default function App() {
   });
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-slate-950 font-sans relative overflow-hidden text-white">
+    <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
       
-      {/* 1. BARRA SUPERIOR FLOTANTE (GLASSMORPHISM) */}
+      {/* 1. BARRA SUPERIOR FLOTANTE */}
       <header className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-4 pointer-events-none">
-        
         <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2">
           <Building className="w-5 h-5 text-indigo-400" />
           <h1 className="text-sm font-bold tracking-wide">HabitaSantiago</h1>
@@ -298,16 +304,14 @@ export default function App() {
       </div>
 
       {/* 3. MAPA PRINCIPAL */}
-      <div className="flex-1 w-full h-full relative z-0">
+      <div className="absolute inset-0 w-full h-full z-0">
         <MapContainer 
           center={[-33.4489, -70.6693]} 
           zoom={13} 
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
         >
-          {/* El Resizer soluciona que carguen partes grises en móviles */}
           <MapResizer />
-
           <TileLayer
             attribution='&copy; OpenStreetMap'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -335,7 +339,7 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* 4. TARJETA INFERIOR DESLIZANTE CON ANIMACIÓN FLUIDA */}
+      {/* 4. TARJETA INFERIOR DESLIZANTE */}
       {edificioSeleccionado && (
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
           <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/80 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
