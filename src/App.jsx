@@ -13,19 +13,30 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Componente avanzado para refrescar el mapa constantemente en móviles
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
     if (!map) return;
-    const interval = setInterval(() => {
+    
+    // Forzar redimensionamiento inmediato y repetido para asegurar carga en móviles
+    const timers = [100, 300, 600, 1000].map(delay => 
+      setTimeout(() => {
+        map.invalidateSize(true);
+      }, delay)
+    );
+
+    const handleResize = () => {
       map.invalidateSize(true);
-    }, 300);
-    const timeout = setTimeout(() => {
-      clearInterval(interval);
-    }, 1500);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
     return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+      timers.forEach(clearTimeout);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
     };
   }, [map]);
   return null;
@@ -217,7 +228,7 @@ export default function App() {
   });
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
+    <div className="fixed inset-0 w-full h-full bg-slate-950 font-sans text-white overflow-hidden">
       
       {/* 1. BARRA SUPERIOR FLOTANTE */}
       <header className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-4 pointer-events-none">
