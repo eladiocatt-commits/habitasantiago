@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   Star, MapPin, Building, Search, Plus, X, CheckCircle2, MessageSquare, PlusCircle, Upload, Map as MapIcon, List, LogIn, LogOut, User, DollarSign, Filter
@@ -13,6 +13,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Componente auxiliar para forzar a Leaflet a redibujar el mapa correctamente en móviles
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    if (!map) return;
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+  }, [map]);
+  return null;
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [edificios, setEdificios] = useState([]);
@@ -23,7 +35,6 @@ export default function App() {
   const [resenas, setResenas] = useState([]);
   const [cargandoResenas, setCargandoResenas] = useState(false);
   
-  // Nuevos estados para filtros por Comuna y Rating
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
 
@@ -188,7 +199,6 @@ export default function App() {
     setEnviando(false);
   };
 
-  // Filtrado avanzado por texto, comuna y rating
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
                        e.comuna.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -201,7 +211,7 @@ export default function App() {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 font-sans relative overflow-hidden text-white">
+    <div className="flex flex-col h-[100dvh] bg-slate-950 font-sans relative overflow-hidden text-white">
       
       {/* 1. BARRA SUPERIOR FLOTANTE (GLASSMORPHISM) */}
       <header className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-4 pointer-events-none">
@@ -296,6 +306,9 @@ export default function App() {
           style={{ width: '100%', height: '100%' }}
           zoomControl={false}
         >
+          {/* El Resizer soluciona que carguen partes grises en móviles */}
+          <MapResizer />
+
           <TileLayer
             attribution='&copy; OpenStreetMap'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
