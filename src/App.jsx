@@ -13,14 +13,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Componente para forzar a Leaflet a redibujar el mapa correctamente en móviles
+// Componente para forzar la actualización del mapa en móviles
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
     if (!map) return;
     const timer = setTimeout(() => {
       map.invalidateSize(true);
-    }, 250);
+    }, 300);
     return () => clearTimeout(timer);
   }, [map]);
   return null;
@@ -36,7 +36,6 @@ export default function App() {
   const [resenas, setResenas] = useState([]);
   const [cargandoResenas, setCargandoResenas] = useState(false);
   
-  // Filtros por Comuna y Rating
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
 
@@ -201,7 +200,6 @@ export default function App() {
     setEnviando(false);
   };
 
-  // Filtrado por texto, comuna y calificación
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
                        e.comuna.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -218,12 +216,12 @@ export default function App() {
       
       {/* 1. BARRA SUPERIOR FLOTANTE */}
       <header className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-4 pointer-events-none">
-        <div className="pointer-events-auto bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2">
+        <div className="pointer-events-auto bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2">
           <Building className="w-5 h-5 text-indigo-400" />
           <h1 className="text-sm font-bold tracking-wide">HabitaSantiago</h1>
         </div>
 
-        <div className="pointer-events-auto hidden md:flex items-center bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 px-3 py-2 rounded-2xl shadow-2xl w-80">
+        <div className="pointer-events-auto hidden md:flex items-center bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 px-3 py-2 rounded-2xl shadow-2xl w-80">
           <Search className="w-4 h-4 text-slate-400 mr-2" />
           <input 
             type="text"
@@ -234,7 +232,7 @@ export default function App() {
           />
         </div>
 
-        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-1.5 rounded-2xl shadow-2xl">
+        <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 p-1.5 rounded-2xl shadow-2xl">
           <button 
             onClick={() => {
               if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
@@ -305,7 +303,7 @@ export default function App() {
         <MapContainer 
           center={[-33.4489, -70.6693]} 
           zoom={13} 
-          style={{ width: '100%', height: '100%' }}
+          style={{ width: '100%', height: '100%', backgroundColor: '#020617' }}
           zoomControl={false}
         >
           <MapResizer />
@@ -336,7 +334,7 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* 4. TARJETA INFERIOR DESLIZANTE CON ANIMACIÓN */}
+      {/* 4. TARJETA INFERIOR DESLIZANTE */}
       {edificioSeleccionado && (
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
           <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/80 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
