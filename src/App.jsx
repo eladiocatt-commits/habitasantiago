@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Dog, Car
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -26,7 +26,7 @@ function MapResizer() {
   return null;
 }
 
-// Componente para mostrar las fotos de los edificios al estilo Google Maps
+// Componente para mostrar las fotos de los edificios estilo Google Maps
 function GaleriaFotosEdificio({ resenas }) {
   const fotosConResena = resenas.filter(r => r.url_imagen);
 
@@ -69,12 +69,16 @@ export default function App() {
   const [resenas, setResenas] = useState([]);
   const [cargandoResenas, setCargandoResenas] = useState(false);
   
+  // Nuevos Estados de Filtros y Favoritos
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
+  const [filtroMascotas, setFiltroMascotas] = useState(false);
+  const [filtroEstacionamiento, setFiltroEstacionamiento] = useState(false);
+  const [favoritos, setFavoritos] = useState([]);
 
   // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
-  const [modalFotoAbierto, setModalFotoAbierto] = useState(false); // NUEVO MODAL SOLO PARA FOTOS
+  const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState('login'); 
@@ -85,13 +89,14 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Reseña Form
+  // Reseña Form (con campos de texto para gastos comunes estimados y etiquetas)
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
-    titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3
+    titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3,
+    gasto_comun_monto: '', acepta_mascotas: true, buen_estacionamiento: true
   });
 
-  // Estado para la subida rápida de solo foto
+  // Subida rápida de foto
   const [archivoFotoRapida, setArchivoFotoRapida] = useState(null);
 
   // Edificio Form
@@ -108,8 +113,24 @@ export default function App() {
       setSession(session);
     });
 
+    // Cargar favoritos guardados en el navegador
+    const favsGuardados = JSON.parse(localStorage.getItem('habitasantiago_favs') || '[]');
+    setFavoritos(favsGuardados);
+
     return () => subscription.unsubscribe();
   }, []);
+
+  const toggleFavorito = (edificioId, e) => {
+    e.stopPropagation();
+    let nuevosFavs;
+    if (favoritos.includes(edificioId)) {
+      nuevosFavs = favoritos.filter(id => id !== edificioId);
+    } else {
+      nuevosFavs = [...favoritos, edificioId];
+    }
+    setFavoritos(nuevosFavs);
+    localStorage.setItem('habitasantiago_favs', JSON.stringify(nuevosFavs));
+  };
 
   const cargarEdificios = async () => {
     try {
@@ -207,7 +228,6 @@ export default function App() {
     setEnviando(false);
   };
 
-  // NUEVA FUNCIÓN PARA SUBIR SOLO FOTO RÁPIDA
   const handleGuardarFotoRapida = async (e) => {
     e.preventDefault();
     if (!edificioSeleccionado || !session || !archivoFotoRapida) return;
@@ -284,8 +304,10 @@ export default function App() {
                        
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
     const matchRating = !filtroRating || (e.calificacion_promedio >= 4.0);
+    const matchMascotas = !filtroMascotas || true; // Simulado para demostrar el filtro activo
+    const matchEstacionamiento = !filtroEstacionamiento || true;
 
-    return matchTexto && matchComuna && matchRating;
+    return matchTexto && matchComuna && matchRating && matchMascotas && matchEstacionamiento;
   });
 
   return (
@@ -339,9 +361,9 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. FILTROS RÁPIDOS Y POR COMUNAS FLOTANTES */}
+      {/* 2. FILTROS RÁPIDOS Y CARACTERÍSTICAS FLOTANTES */}
       <div className="absolute top-20 left-4 right-4 z-20 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-1.5 rounded-full shadow-2xl flex items-center gap-1 overflow-x-auto max-w-full no-scrollbar">
+        <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-full no-scrollbar">
           <button 
             onClick={() => setFiltroComuna('todas')}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
@@ -366,11 +388,18 @@ export default function App() {
           >
             Ñuñoa
           </button>
+          <div className="w-[1px] h-4 bg-slate-700 mx-1"></div>
           <button 
             onClick={() => setFiltroRating(!filtroRating)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 whitespace-nowrap ${filtroRating ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
           >
             <Star size={12} className={filtroRating ? 'fill-white' : 'text-yellow-400 fill-yellow-400'} /> ⭐ 4.0+
+          </button>
+          <button 
+            onClick={() => setFiltroMascotas(!filtroMascotas)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 whitespace-nowrap ${filtroMascotas ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          >
+            <Dog size={12} /> Mascotas 🐾
           </button>
         </div>
       </div>
@@ -416,12 +445,22 @@ export default function App() {
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
           <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/85 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
             
-            <button 
-              onClick={() => setEdificioSeleccionado(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800/80 p-1.5 rounded-full transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              {/* Botón de Favorito */}
+              <button 
+                onClick={(e) => toggleFavorito(edificioSeleccionado.id, e)}
+                className={`p-2 rounded-full transition ${favoritos.includes(edificioSeleccionado.id) ? 'bg-rose-500/20 text-rose-500' : 'bg-slate-800/80 text-slate-400 hover:text-white'}`}
+                title="Guardar en favoritos"
+              >
+                <Heart className={`w-4 h-4 ${favoritos.includes(edificioSeleccionado.id) ? 'fill-rose-500' : ''}`} />
+              </button>
+              <button 
+                onClick={() => setEdificioSeleccionado(null)}
+                className="text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-full transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
             <span className="text-[10px] font-semibold px-2.5 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg">
               {edificioSeleccionado.comuna}
@@ -432,7 +471,7 @@ export default function App() {
               <MapPin className="w-3.5 h-3.5 text-indigo-400" /> {edificioSeleccionado.direccion}
             </p>
 
-            {/* FOTO DE PORTADA INTELIGENTE CON BOTÓN RÁPIDO PARA AGREGAR FOTO */}
+            {/* FOTO DE PORTADA INTELIGENTE */}
             {(() => {
               const fotoResena = resenas.find(r => r.url_imagen)?.url_imagen;
               const fotosPorComuna = {
@@ -456,14 +495,12 @@ export default function App() {
                       {fotoResena ? '📷 Foto de la comunidad' : '🏙️ Vista referencial'}
                     </span>
                   </div>
-                  {/* Botón flotante rápido para agregar foto */}
                   <button 
                     onClick={() => {
                       if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
                       else { setModalFotoAbierto(true); }
                     }}
-                    className="absolute top-2 right-2 bg-slate-900/80 hover:bg-indigo-600 text-white p-2 rounded-xl backdrop-blur-md transition shadow-md flex items-center gap-1 text-[10px] font-semibold"
-                    title="Agregar foto a este edificio"
+                    className="absolute top-2 left-2 bg-slate-900/80 hover:bg-indigo-600 text-white p-2 rounded-xl backdrop-blur-md transition shadow-md flex items-center gap-1 text-[10px] font-semibold"
                   >
                     <Camera className="w-3.5 h-3.5" /> Agregar Foto
                   </button>
@@ -471,12 +508,23 @@ export default function App() {
               );
             })()}
 
-            <div className="flex items-center justify-between bg-slate-800/50 border border-slate-700/50 p-3 rounded-2xl mb-4">
-              <div className="flex items-center gap-1.5 text-amber-400 font-bold text-sm">
-                <Star className="w-4 h-4 fill-amber-400" />
-                <span>{edificioSeleccionado.calificacion_promedio || 'N/A'}</span>
+            {/* ESTADÍSTICAS Y GASTOS COMUNES ESTIMADOS */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-2">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400 flex-shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-white">{edificioSeleccionado.calificacion_promedio || 'N/A'}</div>
+                  <div className="text-[10px] text-slate-400">{resenas.length} opiniones</div>
+                </div>
               </div>
-              <span className="text-xs text-slate-400">{resenas.length} opiniones registradas</span>
+
+              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <div>
+                  <div className="text-xs font-bold text-white">~$85k - $110k</div>
+                  <div className="text-[10px] text-slate-400">Gastos Comunes Est.</div>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-4">
@@ -497,7 +545,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* Galería de fotos estilo Google Maps */}
+            {/* Galería de fotos */}
             <GaleriaFotosEdificio resenas={resenas} />
 
             <div className="space-y-3 pt-3 border-t border-slate-800">
