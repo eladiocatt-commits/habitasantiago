@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Dog
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -72,7 +72,6 @@ export default function App() {
   // Filtros y Favoritos
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
-  const [filtroMascotas, setFiltroMascotas] = useState(false);
   const [favoritos, setFavoritos] = useState([]);
 
   // Modales
@@ -88,7 +87,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Reseña Form con campos numéricos para Gasto Común y Arriendo
+  // Reseña Form con campo de habitaciones agregado
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
     titulo: '', 
@@ -98,7 +97,8 @@ export default function App() {
     nota_gastos_comunes: 3, 
     nota_seguridad: 3,
     gasto_comun: '',
-    arriendo: ''
+    arriendo: '',
+    habitaciones: '1'
   });
 
   // Subida rápida de foto
@@ -172,25 +172,33 @@ export default function App() {
     cargarResenas();
   }, [edificioSeleccionado]);
 
-  // Cálculo matemático dinámico de promedios basado netamente en lo que ponen los vecinos
+  // Cálculo matemático dinámico de promedios por habitaciones
   const calcularPromediosEdificio = () => {
     const resenasConGastos = resenas.filter(r => r.gasto_comun && Number(r.gasto_comun) > 0);
     const resenasConArriendo = resenas.filter(r => r.arriendo && Number(r.arriendo) > 0);
 
     let promedioGasto = 'Sin datos';
-    let promedioArriendo = 'Sin datos';
-
     if (resenasConGastos.length > 0) {
       const suma = resenasConGastos.reduce((acc, curr) => acc + Number(curr.gasto_comun), 0);
       promedioGasto = `$${Math.round(suma / resenasConGastos.length).toLocaleString('es-CL')}`;
     }
 
-    if (resenasConArriendo.length > 0) {
-      const suma = resenasConArriendo.reduce((acc, curr) => acc + Number(curr.arriendo), 0);
-      promedioArriendo = `$${Math.round(suma / resenasConArriendo.length).toLocaleString('es-CL')}`;
-    }
+    // Agrupar arriendos por cantidad de habitaciones
+    const arriendosPorHab = {};
+    resenasConArriendo.forEach(r => {
+      const hab = r.habitaciones || '1';
+      if (!arriendosPorHab[hab]) arriendosPorHab[hab] = [];
+      arriendosPorHab[hab].push(Number(r.arriendo));
+    });
 
-    return { promedioGasto, promedioArriendo };
+    const promediosArriendoPorHab = {};
+    Object.keys(arriendosPorHab).forEach(hab => {
+      const lista = arriendosPorHab[hab];
+      const suma = lista.reduce((a, b) => a + b, 0);
+      promediosArriendoPorHab[hab] = `$${Math.round(suma / lista.length).toLocaleString('es-CL')}`;
+    });
+
+    return { promedioGasto, promediosArriendoPorHab };
   };
 
   const handleAuthSubmit = async (e) => {
@@ -239,6 +247,7 @@ export default function App() {
       nota_seguridad: parseInt(nuevaResena.nota_seguridad),
       gasto_comun: nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null,
       arriendo: nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null,
+      habitaciones: nuevaResena.habitaciones ? String(nuevaResena.habitaciones) : '1',
       url_imagen: fotoUrl,
       usuario_email: session.user.email,
       es_verificado: true
@@ -247,11 +256,11 @@ export default function App() {
     if (!error) {
       setModalResenaAbierto(false);
       setArchivoFoto(null);
-      setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '' });
+      setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1' });
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
-    } else { alert('Error al guardar la reseña. Asegúrate de haber ejecutado la columna en Supabase si es nueva.'); }
+    } else { alert('Error al guardar la reseña. Asegúrate de haber ejecutado la columna de habitaciones en Supabase.'); }
     setEnviando(false);
   };
 
@@ -335,7 +344,7 @@ export default function App() {
     return matchTexto && matchComuna && matchRating;
   });
 
-  const { promedioGasto, promedioArriendo } = calcularPromediosEdificio();
+  const { promedioGasto, promediosArriendoPorHab } = calcularPromediosEdificio();
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
@@ -528,22 +537,34 @@ export default function App() {
               );
             })()}
 
-            {/* PROMEDIOS CALCULADOS NETAMENTE DE LAS OPINIONES DE LOS VECINOS */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <div>
-                  <div className="text-xs font-bold text-white">{promedioGasto}</div>
-                  <div className="text-[10px] text-slate-400">Gasto Común Prom.</div>
+            {/* PROMEDIOS POR HABITACIÓN Y GASTOS COMUNES */}
+            <div className="space-y-2 mb-3">
+              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <span className="text-xs text-slate-300">Gasto Común Promedio</span>
                 </div>
+                <span className="text-xs font-bold text-white">{promedioGasto}</span>
               </div>
 
-              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-2">
-                <Building className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <div>
-                  <div className="text-xs font-bold text-white">{promedioArriendo}</div>
-                  <div className="text-[10px] text-slate-400">Arriendo Prom.</div>
+              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Home className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span className="text-xs text-slate-300 font-semibold">Arriendo Promedio por Tipología</span>
                 </div>
+                
+                {Object.keys(promediosArriendoPorHab).length === 0 ? (
+                  <p className="text-[11px] text-slate-500 italic">Sin datos de arriendo registrados aún.</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
+                      <div key={hab} className="bg-slate-900/80 p-1.5 rounded-xl text-center border border-slate-800">
+                        <div className="text-[10px] text-indigo-400 font-bold">{hab} Dorm.</div>
+                        <div className="text-xs font-semibold text-white">{monto}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -593,17 +614,18 @@ export default function App() {
                     </div>
                     <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
 
-                    {/* Muestra los montos aportados por el vecino en su reseña */}
-                    {(r.gasto_comun || r.arriendo) && (
-                      <div className="flex gap-3 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
-                        {r.gasto_comun && (
-                          <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>
-                        )}
-                        {r.arriendo && (
-                          <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>
-                        )}
-                      </div>
-                    )}
+                    {/* Muestra habitaciones, gastos comunes y arriendo indicados por el vecino */}
+                    <div className="flex flex-wrap gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
+                      {r.habitaciones && (
+                        <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>
+                      )}
+                      {r.gasto_comun && (
+                        <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>
+                      )}
+                      {r.arriendo && (
+                        <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>
+                      )}
+                    </div>
                     
                     {r.url_imagen && (
                       <div className="rounded-xl overflow-hidden border border-slate-800 mt-2 max-h-36">
@@ -706,7 +728,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: NUEVA OPINIÓN CON CASILLAS DE GASTO COMÚN Y ARRIENDO */}
+      {/* MODAL: NUEVA OPINIÓN CON CASILLAS DE HABITACIONES, GASTO COMÚN Y ARRIENDO */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
@@ -727,22 +749,34 @@ export default function App() {
                 />
               </div>
 
-              {/* CASILLAS NUMÉRICAS PARA GASTO COMÚN Y ARRIENDO */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* CASILLAS DE HABITACIONES, GASTO COMÚN Y ARRIENDO */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Dormitorios</label>
+                  <select 
+                    value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})}
+                    className="w-full px-2 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="1">1 Dorm</option>
+                    <option value="2">2 Dorm</option>
+                    <option value="3">3 Dorm</option>
+                    <option value="4">4+ Dorm</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">Gasto Común ($)</label>
                   <input 
                     type="number" placeholder="Ej: 95000"
                     value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-2.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Arriendo Aprox. ($)</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Arriendo ($)</label>
                   <input 
                     type="number" placeholder="Ej: 450000"
                     value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-2.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
               </div>
