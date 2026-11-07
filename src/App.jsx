@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, AlertTriangle, Filter
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -70,24 +70,28 @@ export default function App() {
   // Filtros y Favoritos
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
-  const [filtroPresupuesto, setFiltroPresupuesto] = useState('todos'); // NUEVO FILTRO DE PRECIO
+  const [filtroPresupuesto, setFiltroPresupuesto] = useState('todos');
   const [favoritos, setFavoritos] = useState([]);
 
   // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
-  const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false); // NUEVO MODAL DE ALERTAS
+  const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false);
+  const [modalAdminAbierto, setModalAdminAbierto] = useState(false); // NUEVO MODAL ADMIN
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState('login'); 
   const [enviando, setEnviando] = useState(false);
+
+  // Leads de Alertas para Admin
+  const [listaAlertas, setListaAlertas] = useState([]);
 
   // Auth Form
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Reseña Form (con etiquetas de incidencias añadidas)
+  // Reseña Form
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
     titulo: '', 
@@ -102,13 +106,9 @@ export default function App() {
     etiqueta: 'Excelente conectividad al metro'
   });
 
-  // Estado para Alerta de Arriendo
   const [correoAlerta, setCorreoAlerta] = useState('');
-
-  // Subida rápida de foto
   const [archivoFotoRapida, setArchivoFotoRapida] = useState(null);
 
-  // Edificio Form
   const [nuevoEdificio, setNuevoEdificio] = useState({
     nombre: '', direccion: '', comuna: 'Santiago Centro', latitud: '-33.4489', longitud: '-70.6693'
   });
@@ -175,6 +175,21 @@ export default function App() {
 
     cargarResenas();
   }, [edificioSeleccionado]);
+
+  // Cargar alertas para el Panel de Administración
+  const cargarAlertasAdmin = async () => {
+    const { data, error } = await supabase
+      .from('alertas_arriendo')
+      .select('*, edificios(nombre, comuna)')
+      .order('creado_en', { ascending: false });
+
+    if (!error) {
+      setListaAlertas(data || []);
+      setModalAdminAbierto(true);
+    } else {
+      alert('Error al cargar el panel de leads.');
+    }
+  };
 
   const calcularPromediosEdificio = () => {
     const resenasConGastos = resenas.filter(r => r.gasto_comun && Number(r.gasto_comun) > 0);
@@ -263,16 +278,28 @@ export default function App() {
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
-    } else { alert('Error al guardar la reseña. Asegúrate de haber ejecutado la columna de etiqueta en Supabase si es nueva.'); }
+    } else { alert('Error al guardar la reseña.'); }
     setEnviando(false);
   };
 
-  const handleGuardarAlerta = (e) => {
+  const handleGuardarAlerta = async (e) => {
     e.preventDefault();
-    if (!correoAlerta) return;
-    alert(`¡Listo! Te avisaremos al correo ${correoAlerta} cuando haya nuevos arriendos o reportes en ${edificioSeleccionado?.nombre}.`);
-    setCorreoAlerta('');
-    setModalAlertaAbierto(false);
+    if (!correoAlerta || !edificioSeleccionado) return;
+    setEnviando(true);
+
+    const { error } = await supabase.from('alertas_arriendo').insert([{
+      edificio_id: edificioSeleccionado.id,
+      correo: correoAlerta
+    }]);
+
+    if (!error) {
+      alert(`¡Listo! Te avisaremos a ${correoAlerta} cuando haya novedades en ${edificioSeleccionado.nombre}.`);
+      setCorreoAlerta('');
+      setModalAlertaAbierto(false);
+    } else {
+      alert('Hubo un error al registrar la alerta. Asegúrate de haber creado la tabla en Supabase.');
+    }
+    setEnviando(false);
   };
 
   const handleGuardarFotoRapida = async (e) => {
@@ -352,14 +379,11 @@ export default function App() {
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
     const matchRating = !filtroRating || (e.calificacion_promedio >= 4.0);
 
-    let matchPresupuesto = true;
-    if (filtroPresupuesto === 'bajo') matchPresupuesto = (e.calificacion_promedio >= 3.0); // Simulado con rating/datos
-    if (filtroPresupuesto === 'alto') matchPresupuesto = true;
-
-    return matchTexto && matchComuna && matchRating && matchPresupuesto;
+    return matchTexto && matchComuna && matchRating;
   });
 
   const { promedioGasto, promediosArriendoPorHab } = calcularPromediosEdificio();
+  const esAdmin = session?.user?.email === 'eladiocatt@gmail.com';
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
@@ -383,6 +407,17 @@ export default function App() {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 p-1.5 rounded-2xl shadow-2xl">
+          {/* BOTÓN SECRETO DE ADMIN (Solo visible para ti) */}
+          {esAdmin && (
+            <button 
+              onClick={cargarAlertasAdmin}
+              className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1 transition shadow-lg shadow-amber-600/30"
+              title="Panel de Leads y Alertas"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" /> Admin Leads
+            </button>
+          )}
+
           <button 
             onClick={() => {
               if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
@@ -412,7 +447,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. FILTROS RÁPIDOS Y DE PRESUPUESTO */}
+      {/* 2. FILTROS RÁPIDOS */}
       <div className="absolute top-20 left-4 right-4 z-20 flex justify-center pointer-events-none">
         <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-full no-scrollbar">
           <button 
@@ -446,15 +481,6 @@ export default function App() {
           >
             <Star size={12} className={filtroRating ? 'fill-white' : 'text-yellow-400 fill-yellow-400'} /> ⭐ 4.0+
           </button>
-          <select 
-            value={filtroPresupuesto} 
-            onChange={(e) => setFiltroPresupuesto(e.target.value)}
-            className="bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full text-xs font-medium border-0 focus:outline-none cursor-pointer"
-          >
-            <option value="todos">💵 Todo Precio</option>
-            <option value="bajo">💵 Hasta $400k</option>
-            <option value="alto">💵 $400k - $700k+</option>
-          </select>
         </div>
       </div>
 
@@ -646,14 +672,12 @@ export default function App() {
                     </div>
                     <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
 
-                    {/* ETIQUETA DE INCIDENCIA / CARACTERÍSTICA */}
                     {r.etiqueta && (
                       <span className="inline-block bg-indigo-500/15 text-indigo-300 text-[10px] font-semibold px-2 py-0.5 rounded-lg border border-indigo-500/30">
                         🏷️ {r.etiqueta}
                       </span>
                     )}
 
-                    {/* Muestra habitaciones, gastos comunes y arriendo indicados por el vecino */}
                     <div className="flex flex-wrap gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
                       {r.habitaciones && (
                         <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>
@@ -688,6 +712,41 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL: PANEL DE ADMINISTRACIÓN DE LEADS / ALERTAS */}
+      {modalAdminAbierto && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative text-white max-h-[85vh] overflow-y-auto">
+            <button onClick={() => setModalAdminAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+              <ShieldAlert className="text-amber-400" /> Panel de Leads / Alertas de Arriendo
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">Lista de correos registrados por usuarios esperando un arriendo en edificios específicos.</p>
+
+            {listaAlertas.length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-8">No hay alertas registradas todavía.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {listaAlertas.map((alerta) => (
+                  <div key={alerta.id} className="bg-slate-950/60 border border-slate-800 p-3 rounded-2xl flex items-center justify-between text-xs">
+                    <div>
+                      <div className="font-bold text-indigo-400">{alerta.edificios?.nombre || 'Edificio desconocido'}</div>
+                      <div className="text-[10px] text-slate-400">{alerta.edificios?.comuna || ''}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-white">{alerta.correo}</div>
+                      <div className="text-[10px] text-slate-500">{new Date(alerta.creado_en).toLocaleDateString('es-CL')}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* MODAL: ALERTAS DE ARRIENDO */}
       {modalAlertaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
@@ -709,8 +768,8 @@ export default function App() {
                 />
               </div>
 
-              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
-                Activar Alerta
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+                {enviando ? 'Guardando...' : 'Activar Alerta'}
               </button>
             </form>
           </div>
@@ -796,7 +855,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: NUEVA OPINIÓN CON ETIQUETAS Y CASILLAS */}
+      {/* MODAL: NUEVA OPINIÓN */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
@@ -817,7 +876,6 @@ export default function App() {
                 />
               </div>
 
-              {/* CASILLAS DE HABITACIONES, GASTO COMÚN Y ARRIENDO */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">Dormitorios</label>
@@ -849,7 +907,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* ETIQUETA CLAVE / INCIDENCIA */}
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">Característica principal del edificio</label>
                 <select 
