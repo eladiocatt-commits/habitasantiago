@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -77,11 +77,21 @@ export default function App() {
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
   const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false);
-  const [modalAdminAbierto, setModalAdminAbierto] = useState(false); // NUEVO MODAL ADMIN
+  const [modalAdminAbierto, setModalAdminAbierto] = useState(false);
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
-  const [modoAuth, setModoAuth] = useState('login'); 
+  const [modoAuth, setModoAuth] = useState('login'); // 'login' o 'registro'
   const [enviando, setEnviando] = useState(false);
+
+  // Sistema de Notificaciones Propias (Toasts) en reemplazo de alerts de Chrome
+  const [mensajeNotificacion, setMensajeNotificacion] = useState(null); // { tipo: 'success' | 'error', texto: '' }
+
+  const mostrarAviso = (texto, tipo = 'success') => {
+    setMensajeNotificacion({ texto, tipo });
+    setTimeout(() => {
+      setMensajeNotificacion(null);
+    }, 4000);
+  };
 
   // Leads de Alertas para Admin
   const [listaAlertas, setListaAlertas] = useState([]);
@@ -90,6 +100,7 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [registroExitosoMsg, setRegistroExitosoMsg] = useState(false);
 
   // Reseña Form
   const [archivoFoto, setArchivoFoto] = useState(null);
@@ -176,7 +187,6 @@ export default function App() {
     cargarResenas();
   }, [edificioSeleccionado]);
 
-  // Cargar alertas para el Panel de Administración
   const cargarAlertasAdmin = async () => {
     const { data, error } = await supabase
       .from('alertas_arriendo')
@@ -187,7 +197,7 @@ export default function App() {
       setListaAlertas(data || []);
       setModalAdminAbierto(true);
     } else {
-      alert('Error al cargar el panel de leads.');
+      mostrarAviso('Error al cargar el panel de leads.', 'error');
     }
   };
 
@@ -224,18 +234,34 @@ export default function App() {
     setAuthError('');
 
     if (modoAuth === 'registro') {
-      const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
-      if (error) setAuthError(error.message);
-      else { alert('¡Cuenta creada con éxito!'); setModalAuthAbierto(false); }
+      const { error } = await supabase.auth.signUp({ 
+        email: authEmail, 
+        password: authPassword,
+        options: {
+          emailRedirectTo: window.location.origin // Evita problemas de localhost rígido
+        }
+      });
+      if (error) {
+        setAuthError(error.message);
+      } else {
+        setRegistroExitosoMsg(true);
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-      if (error) setAuthError('Correo o contraseña incorrectos.');
-      else { setModalAuthAbierto(false); }
+      if (error) {
+        setAuthError('Correo o contraseña incorrectos.');
+      } else {
+        setModalAuthAbierto(false);
+        mostrarAviso('¡Bienvenido de vuelta a HabitaSantiago!');
+      }
     }
     setEnviando(false);
   };
 
-  const handleCerrarSesion = async () => { await supabase.auth.signOut(); };
+  const handleCerrarSesion = async () => { 
+    await supabase.auth.signOut(); 
+    mostrarAviso('Has cerrado sesión correctamente.');
+  };
 
   const handleGuardarResena = async (e) => {
     e.preventDefault();
@@ -278,7 +304,10 @@ export default function App() {
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
-    } else { alert('Error al guardar la reseña.'); }
+      mostrarAviso('¡Tu opinión ha sido publicada con éxito!');
+    } else { 
+      mostrarAviso('Error al guardar la reseña.', 'error'); 
+    }
     setEnviando(false);
   };
 
@@ -293,11 +322,11 @@ export default function App() {
     }]);
 
     if (!error) {
-      alert(`¡Listo! Te avisaremos a ${correoAlerta} cuando haya novedades en ${edificioSeleccionado.nombre}.`);
+      mostrarAviso(`¡Suscrito con éxito! Te avisaremos a ${correoAlerta}.`);
       setCorreoAlerta('');
       setModalAlertaAbierto(false);
     } else {
-      alert('Hubo un error al registrar la alerta. Asegúrate de haber creado la tabla en Supabase.');
+      mostrarAviso('Hubo un error al registrar la alerta.', 'error');
     }
     setEnviando(false);
   };
@@ -337,7 +366,10 @@ export default function App() {
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
-    } else { alert('Error al subir la foto.'); }
+      mostrarAviso('¡Foto de portada actualizada con éxito!');
+    } else { 
+      mostrarAviso('Error al subir la foto.', 'error'); 
+    }
     setEnviando(false);
   };
 
@@ -367,7 +399,10 @@ export default function App() {
       setNuevoEdificio({ nombre: '', direccion: '', comuna: 'Santiago Centro', latitud: '-33.4489', longitud: '-70.6693' });
       await cargarEdificios();
       if (data && data.length > 0) setEdificioSeleccionado(data[0]);
-    } else { alert('Error al crear el edificio.'); }
+      mostrarAviso('¡Edificio registrado exitosamente en el mapa!');
+    } else { 
+      mostrarAviso('Error al crear el edificio.', 'error'); 
+    }
     setEnviando(false);
   };
 
@@ -388,6 +423,18 @@ export default function App() {
   return (
     <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
       
+      {/* NOTIFICACIÓN FLOTANTE (TOAST) EN REEMPLAZO DE ALERTAS NATIVAS */}
+      {mensajeNotificacion && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[99999] bg-slate-900 border border-slate-700 shadow-2xl px-4 py-3 rounded-2xl flex items-center gap-2.5 animate-bounce">
+          {mensajeNotificacion.tipo === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+          )}
+          <span className="text-xs font-medium text-white">{mensajeNotificacion.texto}</span>
+        </div>
+      )}
+
       {/* 1. BARRA SUPERIOR FLOTANTE */}
       <header className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-4 pointer-events-none">
         <div className="pointer-events-auto bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2">
@@ -407,7 +454,6 @@ export default function App() {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2 bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 p-1.5 rounded-2xl shadow-2xl">
-          {/* BOTÓN SECRETO DE ADMIN (Solo visible para ti) */}
           {esAdmin && (
             <button 
               onClick={cargarAlertasAdmin}
@@ -420,7 +466,7 @@ export default function App() {
 
           <button 
             onClick={() => {
-              if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
+              if (!session) { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }
               else { setModalEdificioAbierto(true); }
             }}
             className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1 transition shadow-lg shadow-indigo-600/30"
@@ -438,7 +484,7 @@ export default function App() {
             </button>
           ) : (
             <button 
-              onClick={() => { setModoAuth('login'); setModalAuthAbierto(true); }}
+              onClick={() => { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }}
               className="text-xs bg-slate-800 hover:bg-slate-700 text-white font-medium px-3 py-1.5 rounded-xl flex items-center gap-1 transition"
             >
               <LogIn className="w-3.5 h-3.5" /> Entrar
@@ -576,7 +622,7 @@ export default function App() {
                   </div>
                   <button 
                     onClick={() => {
-                      if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
+                      if (!session) { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }
                       else { setModalFotoAbierto(true); }
                     }}
                     className="absolute top-2 left-2 bg-slate-900/80 hover:bg-indigo-600 text-white p-2 rounded-xl backdrop-blur-md transition shadow-md flex items-center gap-1 text-[10px] font-semibold"
@@ -636,7 +682,7 @@ export default function App() {
             <div className="grid grid-cols-2 gap-2 mb-4">
               <button 
                 onClick={() => {
-                  if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
+                  if (!session) { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }
                   else { setModalResenaAbierto(true); }
                 }}
                 className="bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-3 rounded-xl font-semibold text-xs transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5"
@@ -644,7 +690,7 @@ export default function App() {
                 <Plus className="w-3.5 h-3.5" /> Dejar Opinión
               </button>
               <button 
-                onClick={() => alert('Próximamente: Conexión directa con corredores y arriendos disponibles.')}
+                onClick={() => mostrarAviso('Próximamente: Conexión directa con corredores y arriendos disponibles.')}
                 className="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 px-3 rounded-xl font-semibold text-xs transition border border-slate-700 flex items-center justify-center gap-1.5"
               >
                 <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Cotizar Arriendo
@@ -756,7 +802,7 @@ export default function App() {
             </button>
 
             <h3 className="text-lg font-bold mb-1">🔔 Alerta de Arriendo</h3>
-            <p className="text-xs text-slate-400 mb-4">Te avisaremos de inmediato si se publica un arriendo en **{edificioSeleccionado?.nombre}**.</p>
+            <p className="text-xs text-slate-400 mb-4">Te avisaremos de inmediato si se publica un arriendo en <b>{edificioSeleccionado?.nombre}</b>.</p>
 
             <form onSubmit={handleGuardarAlerta} className="space-y-4 text-xs">
               <div>
@@ -805,7 +851,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: AUTENTICACIÓN */}
+      {/* MODAL: AUTENTICACIÓN MEJORADO (CON TABS CLARAS Y AVISO DE CORREO AMIGABLE) */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
@@ -813,44 +859,75 @@ export default function App() {
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold mb-1">{modoAuth === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}</h3>
-            <p className="text-xs text-slate-400 mb-4">Accede para opinar y registrar edificios en HabitaSantiago.</p>
-
-            {authError && <p className="text-xs text-red-400 mb-3 bg-red-950/50 border border-red-800 p-2.5 rounded-xl">{authError}</p>}
-
-            <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Correo electrónico</label>
-                <input 
-                  type="email" required placeholder="tu@email.com"
-                  value={authEmail} onChange={(e) => setAuthEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Contraseña</label>
-                <input 
-                  type="password" required placeholder="••••••••" minLength={6}
-                  value={authPassword} onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 mt-2">
-                {enviando ? 'Procesando...' : modoAuth === 'login' ? 'Ingresar' : 'Registrarse'}
+            {/* Selector de Pestañas (Tabs) Interactivas */}
+            <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-5">
+              <button 
+                type="button"
+                onClick={() => { setModoAuth('login'); setAuthError(''); setRegistroExitosoMsg(false); }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                Iniciar Sesión
               </button>
-            </form>
-
-            <div className="mt-4 text-center text-xs">
-              {modoAuth === 'login' ? (
-                <button onClick={() => { setModoAuth('registro'); setAuthError(''); }} className="text-indigo-400 font-medium hover:underline">
-                  ¿No tienes cuenta? Regístrate aquí
-                </button>
-              ) : (
-                <button onClick={() => { setModoAuth('login'); setAuthError(''); }} className="text-indigo-400 font-medium hover:underline">
-                  ¿Ya tienes cuenta? Inicia sesión
-                </button>
-              )}
+              <button 
+                type="button"
+                onClick={() => { setModoAuth('registro'); setAuthError(''); setRegistroExitosoMsg(false); }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'registro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+              >
+                Registrarse
+              </button>
             </div>
+
+            {registroExitosoMsg ? (
+              <div className="bg-emerald-950/50 border border-emerald-800/80 p-4 rounded-2xl text-center space-y-3">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                <h4 className="font-bold text-sm text-white">¡Registro completado con éxito!</h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Te hemos enviado un enlace de confirmación a tu correo. Haz clic en él para activar tu cuenta y luego regresa aquí para iniciar sesión.
+                </p>
+                <button 
+                  onClick={() => { setModoAuth('login'); setRegistroExitosoMsg(false); }} 
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-xs transition"
+                >
+                  Ir a Iniciar Sesión
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-base font-bold mb-1">
+                  {modoAuth === 'login' ? '¡Qué bueno verte de nuevo!' : 'Crea tu cuenta en HabitaSantiago'}
+                </h3>
+                <p className="text-xs text-slate-400 mb-4">
+                  {modoAuth === 'login' 
+                    ? 'Ingresa tus datos para opinar y guardar tus favoritos.' 
+                    : 'Regístrate primero para unirte a la comunidad de vecinos.'}
+                </p>
+
+                {authError && <p className="text-xs text-red-400 mb-3 bg-red-950/50 border border-red-800 p-2.5 rounded-xl">{authError}</p>}
+
+                <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">Correo electrónico</label>
+                    <input 
+                      type="email" required placeholder="tu@email.com"
+                      value={authEmail} onChange={(e) => setAuthEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">Contraseña</label>
+                    <input 
+                      type="password" required placeholder="••••••••" minLength={6}
+                      value={authPassword} onChange={(e) => setAuthPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 mt-2">
+                    {enviando ? 'Procesando...' : modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarme'}
+                  </button>
+                </form>
+              </>
+            )}
+
           </div>
         </div>
       )}
