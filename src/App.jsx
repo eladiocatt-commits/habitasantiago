@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Dog, Car
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Dog
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,11 +69,10 @@ export default function App() {
   const [resenas, setResenas] = useState([]);
   const [cargandoResenas, setCargandoResenas] = useState(false);
   
-  // Nuevos Estados de Filtros y Favoritos
+  // Filtros y Favoritos
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
   const [filtroMascotas, setFiltroMascotas] = useState(false);
-  const [filtroEstacionamiento, setFiltroEstacionamiento] = useState(false);
   const [favoritos, setFavoritos] = useState([]);
 
   // Modales
@@ -89,11 +88,17 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Reseña Form (con campos de texto para gastos comunes estimados y etiquetas)
+  // Reseña Form con campos numéricos para Gasto Común y Arriendo
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
-    titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3,
-    gasto_comun_monto: '', acepta_mascotas: true, buen_estacionamiento: true
+    titulo: '', 
+    comentario: '', 
+    nota_ruido: 3, 
+    nota_administracion: 3, 
+    nota_gastos_comunes: 3, 
+    nota_seguridad: 3,
+    gasto_comun: '',
+    arriendo: ''
   });
 
   // Subida rápida de foto
@@ -113,7 +118,6 @@ export default function App() {
       setSession(session);
     });
 
-    // Cargar favoritos guardados en el navegador
     const favsGuardados = JSON.parse(localStorage.getItem('habitasantiago_favs') || '[]');
     setFavoritos(favsGuardados);
 
@@ -168,6 +172,27 @@ export default function App() {
     cargarResenas();
   }, [edificioSeleccionado]);
 
+  // Cálculo matemático dinámico de promedios basado netamente en lo que ponen los vecinos
+  const calcularPromediosEdificio = () => {
+    const resenasConGastos = resenas.filter(r => r.gasto_comun && Number(r.gasto_comun) > 0);
+    const resenasConArriendo = resenas.filter(r => r.arriendo && Number(r.arriendo) > 0);
+
+    let promedioGasto = 'Sin datos';
+    let promedioArriendo = 'Sin datos';
+
+    if (resenasConGastos.length > 0) {
+      const suma = resenasConGastos.reduce((acc, curr) => acc + Number(curr.gasto_comun), 0);
+      promedioGasto = `$${Math.round(suma / resenasConGastos.length).toLocaleString('es-CL')}`;
+    }
+
+    if (resenasConArriendo.length > 0) {
+      const suma = resenasConArriendo.reduce((acc, curr) => acc + Number(curr.arriendo), 0);
+      promedioArriendo = `$${Math.round(suma / resenasConArriendo.length).toLocaleString('es-CL')}`;
+    }
+
+    return { promedioGasto, promedioArriendo };
+  };
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setEnviando(true);
@@ -212,6 +237,8 @@ export default function App() {
       nota_administracion: parseInt(nuevaResena.nota_administracion),
       nota_gastos_comunes: parseInt(nuevaResena.nota_gastos_comunes),
       nota_seguridad: parseInt(nuevaResena.nota_seguridad),
+      gasto_comun: nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null,
+      arriendo: nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null,
       url_imagen: fotoUrl,
       usuario_email: session.user.email,
       es_verificado: true
@@ -220,11 +247,11 @@ export default function App() {
     if (!error) {
       setModalResenaAbierto(false);
       setArchivoFoto(null);
-      setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3 });
+      setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '' });
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
-    } else { alert('Error al guardar la reseña.'); }
+    } else { alert('Error al guardar la reseña. Asegúrate de haber ejecutado la columna en Supabase si es nueva.'); }
     setEnviando(false);
   };
 
@@ -304,11 +331,11 @@ export default function App() {
                        
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
     const matchRating = !filtroRating || (e.calificacion_promedio >= 4.0);
-    const matchMascotas = !filtroMascotas || true; // Simulado para demostrar el filtro activo
-    const matchEstacionamiento = !filtroEstacionamiento || true;
 
-    return matchTexto && matchComuna && matchRating && matchMascotas && matchEstacionamiento;
+    return matchTexto && matchComuna && matchRating;
   });
+
+  const { promedioGasto, promedioArriendo } = calcularPromediosEdificio();
 
   return (
     <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
@@ -361,7 +388,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. FILTROS RÁPIDOS Y CARACTERÍSTICAS FLOTANTES */}
+      {/* 2. FILTROS RÁPIDOS */}
       <div className="absolute top-20 left-4 right-4 z-20 flex justify-center pointer-events-none">
         <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-full no-scrollbar">
           <button 
@@ -394,12 +421,6 @@ export default function App() {
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 whitespace-nowrap ${filtroRating ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
           >
             <Star size={12} className={filtroRating ? 'fill-white' : 'text-yellow-400 fill-yellow-400'} /> ⭐ 4.0+
-          </button>
-          <button 
-            onClick={() => setFiltroMascotas(!filtroMascotas)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 whitespace-nowrap ${filtroMascotas ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-          >
-            <Dog size={12} /> Mascotas 🐾
           </button>
         </div>
       </div>
@@ -446,7 +467,6 @@ export default function App() {
           <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/85 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
             
             <div className="absolute top-4 right-4 flex items-center gap-2">
-              {/* Botón de Favorito */}
               <button 
                 onClick={(e) => toggleFavorito(edificioSeleccionado.id, e)}
                 className={`p-2 rounded-full transition ${favoritos.includes(edificioSeleccionado.id) ? 'bg-rose-500/20 text-rose-500' : 'bg-slate-800/80 text-slate-400 hover:text-white'}`}
@@ -471,7 +491,7 @@ export default function App() {
               <MapPin className="w-3.5 h-3.5 text-indigo-400" /> {edificioSeleccionado.direccion}
             </p>
 
-            {/* FOTO DE PORTADA INTELIGENTE */}
+            {/* FOTO DE PORTADA */}
             {(() => {
               const fotoResena = resenas.find(r => r.url_imagen)?.url_imagen;
               const fotosPorComuna = {
@@ -508,23 +528,30 @@ export default function App() {
               );
             })()}
 
-            {/* ESTADÍSTICAS Y GASTOS COMUNES ESTIMADOS */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
+            {/* PROMEDIOS CALCULADOS NETAMENTE DE LAS OPINIONES DE LOS VECINOS */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-2">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400 flex-shrink-0" />
+                <DollarSign className="w-4 h-4 text-amber-400 flex-shrink-0" />
                 <div>
-                  <div className="text-xs font-bold text-white">{edificioSeleccionado.calificacion_promedio || 'N/A'}</div>
-                  <div className="text-[10px] text-slate-400">{resenas.length} opiniones</div>
+                  <div className="text-xs font-bold text-white">{promedioGasto}</div>
+                  <div className="text-[10px] text-slate-400">Gasto Común Prom.</div>
                 </div>
               </div>
 
               <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <Building className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                 <div>
-                  <div className="text-xs font-bold text-white">~$85k - $110k</div>
-                  <div className="text-[10px] text-slate-400">Gastos Comunes Est.</div>
+                  <div className="text-xs font-bold text-white">{promedioArriendo}</div>
+                  <div className="text-[10px] text-slate-400">Arriendo Prom.</div>
                 </div>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between bg-slate-800/30 border border-slate-700/40 px-3 py-2 rounded-2xl mb-4 text-xs text-slate-300">
+              <span className="flex items-center gap-1 text-amber-400 font-bold">
+                <Star className="w-3.5 h-3.5 fill-amber-400" /> {edificioSeleccionado.calificacion_promedio || 'N/A'}
+              </span>
+              <span>{resenas.length} opiniones vecinales</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-4">
@@ -557,7 +584,7 @@ export default function App() {
                 <p className="text-xs text-slate-500 text-center py-3">Sé el primero en opinar sobre este edificio.</p>
               ) : (
                 resenas.map((r) => (
-                  <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-1.5 text-xs">
+                  <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2 text-xs">
                     <div className="flex justify-between items-start">
                       <h4 className="font-semibold text-white">{r.titulo}</h4>
                       {r.es_verificado && (
@@ -565,6 +592,18 @@ export default function App() {
                       )}
                     </div>
                     <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
+
+                    {/* Muestra los montos aportados por el vecino en su reseña */}
+                    {(r.gasto_comun || r.arriendo) && (
+                      <div className="flex gap-3 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
+                        {r.gasto_comun && (
+                          <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>
+                        )}
+                        {r.arriendo && (
+                          <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>
+                        )}
+                      </div>
+                    )}
                     
                     {r.url_imagen && (
                       <div className="rounded-xl overflow-hidden border border-slate-800 mt-2 max-h-36">
@@ -667,7 +706,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: NUEVA RESEÑA */}
+      {/* MODAL: NUEVA OPINIÓN CON CASILLAS DE GASTO COMÚN Y ARRIENDO */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
@@ -680,21 +719,43 @@ export default function App() {
 
             <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Título</label>
+                <label className="block font-semibold text-slate-300 mb-1">Título de la opinión</label>
                 <input 
                   type="text" required placeholder="Ej: Excelente ubicación y tranquilidad"
                   value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
+
+              {/* CASILLAS NUMÉRICAS PARA GASTO COMÚN Y ARRIENDO */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Gasto Común ($)</label>
+                  <input 
+                    type="number" placeholder="Ej: 95000"
+                    value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Arriendo Aprox. ($)</label>
+                  <input 
+                    type="number" placeholder="Ej: 450000"
+                    value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Comentario</label>
+                <label className="block font-semibold text-slate-300 mb-1">Comentario detallado</label>
                 <textarea 
-                  required rows="3" placeholder="Detalles sobre el edificio..."
+                  required rows="3" placeholder="Detalles sobre la experiencia en el edificio..."
                   value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
+
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">Foto o comprobante (Opcional)</label>
                 <input 
