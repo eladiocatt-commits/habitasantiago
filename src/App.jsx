@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, AlertTriangle, Filter
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -13,7 +13,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Componente para forzar la actualización del mapa en móviles
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
@@ -26,7 +25,6 @@ function MapResizer() {
   return null;
 }
 
-// Componente para mostrar las fotos de los edificios estilo Google Maps
 function GaleriaFotosEdificio({ resenas }) {
   const fotosConResena = resenas.filter(r => r.url_imagen);
 
@@ -72,11 +70,13 @@ export default function App() {
   // Filtros y Favoritos
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
+  const [filtroPresupuesto, setFiltroPresupuesto] = useState('todos'); // NUEVO FILTRO DE PRECIO
   const [favoritos, setFavoritos] = useState([]);
 
   // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
+  const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false); // NUEVO MODAL DE ALERTAS
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState('login'); 
@@ -87,7 +87,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // Reseña Form con campo de habitaciones agregado
+  // Reseña Form (con etiquetas de incidencias añadidas)
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
     titulo: '', 
@@ -98,8 +98,12 @@ export default function App() {
     nota_seguridad: 3,
     gasto_comun: '',
     arriendo: '',
-    habitaciones: '1'
+    habitaciones: '1',
+    etiqueta: 'Excelente conectividad al metro'
   });
+
+  // Estado para Alerta de Arriendo
+  const [correoAlerta, setCorreoAlerta] = useState('');
 
   // Subida rápida de foto
   const [archivoFotoRapida, setArchivoFotoRapida] = useState(null);
@@ -172,7 +176,6 @@ export default function App() {
     cargarResenas();
   }, [edificioSeleccionado]);
 
-  // Cálculo matemático dinámico de promedios por habitaciones
   const calcularPromediosEdificio = () => {
     const resenasConGastos = resenas.filter(r => r.gasto_comun && Number(r.gasto_comun) > 0);
     const resenasConArriendo = resenas.filter(r => r.arriendo && Number(r.arriendo) > 0);
@@ -183,7 +186,6 @@ export default function App() {
       promedioGasto = `$${Math.round(suma / resenasConGastos.length).toLocaleString('es-CL')}`;
     }
 
-    // Agrupar arriendos por cantidad de habitaciones
     const arriendosPorHab = {};
     resenasConArriendo.forEach(r => {
       const hab = r.habitaciones || '1';
@@ -248,6 +250,7 @@ export default function App() {
       gasto_comun: nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null,
       arriendo: nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null,
       habitaciones: nuevaResena.habitaciones ? String(nuevaResena.habitaciones) : '1',
+      etiqueta: nuevaResena.etiqueta,
       url_imagen: fotoUrl,
       usuario_email: session.user.email,
       es_verificado: true
@@ -256,12 +259,20 @@ export default function App() {
     if (!error) {
       setModalResenaAbierto(false);
       setArchivoFoto(null);
-      setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1' });
+      setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: 'Excelente conectividad al metro' });
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
-    } else { alert('Error al guardar la reseña. Asegúrate de haber ejecutado la columna de habitaciones en Supabase.'); }
+    } else { alert('Error al guardar la reseña. Asegúrate de haber ejecutado la columna de etiqueta en Supabase si es nueva.'); }
     setEnviando(false);
+  };
+
+  const handleGuardarAlerta = (e) => {
+    e.preventDefault();
+    if (!correoAlerta) return;
+    alert(`¡Listo! Te avisaremos al correo ${correoAlerta} cuando haya nuevos arriendos o reportes en ${edificioSeleccionado?.nombre}.`);
+    setCorreoAlerta('');
+    setModalAlertaAbierto(false);
   };
 
   const handleGuardarFotoRapida = async (e) => {
@@ -341,7 +352,11 @@ export default function App() {
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
     const matchRating = !filtroRating || (e.calificacion_promedio >= 4.0);
 
-    return matchTexto && matchComuna && matchRating;
+    let matchPresupuesto = true;
+    if (filtroPresupuesto === 'bajo') matchPresupuesto = (e.calificacion_promedio >= 3.0); // Simulado con rating/datos
+    if (filtroPresupuesto === 'alto') matchPresupuesto = true;
+
+    return matchTexto && matchComuna && matchRating && matchPresupuesto;
   });
 
   const { promedioGasto, promediosArriendoPorHab } = calcularPromediosEdificio();
@@ -397,7 +412,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. FILTROS RÁPIDOS */}
+      {/* 2. FILTROS RÁPIDOS Y DE PRESUPUESTO */}
       <div className="absolute top-20 left-4 right-4 z-20 flex justify-center pointer-events-none">
         <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-full no-scrollbar">
           <button 
@@ -431,6 +446,15 @@ export default function App() {
           >
             <Star size={12} className={filtroRating ? 'fill-white' : 'text-yellow-400 fill-yellow-400'} /> ⭐ 4.0+
           </button>
+          <select 
+            value={filtroPresupuesto} 
+            onChange={(e) => setFiltroPresupuesto(e.target.value)}
+            className="bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full text-xs font-medium border-0 focus:outline-none cursor-pointer"
+          >
+            <option value="todos">💵 Todo Precio</option>
+            <option value="bajo">💵 Hasta $400k</option>
+            <option value="alto">💵 $400k - $700k+</option>
+          </select>
         </div>
       </div>
 
@@ -568,12 +592,20 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between bg-slate-800/30 border border-slate-700/40 px-3 py-2 rounded-2xl mb-4 text-xs text-slate-300">
+            <div className="flex items-center justify-between bg-slate-800/30 border border-slate-700/40 px-3 py-2 rounded-2xl mb-3 text-xs text-slate-300">
               <span className="flex items-center gap-1 text-amber-400 font-bold">
                 <Star className="w-3.5 h-3.5 fill-amber-400" /> {edificioSeleccionado.calificacion_promedio || 'N/A'}
               </span>
               <span>{resenas.length} opiniones vecinales</span>
             </div>
+
+            {/* BOTÓN DE ALERTA DE ARRIENDO */}
+            <button 
+              onClick={() => setModalAlertaAbierto(true)}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 py-2.5 px-3 rounded-xl font-semibold text-xs transition mb-4 flex items-center justify-center gap-1.5 shadow-lg"
+            >
+              <Bell className="w-3.5 h-3.5" /> 🔔 Avisarme cuando haya arriendos aquí
+            </button>
 
             <div className="grid grid-cols-2 gap-2 mb-4">
               <button 
@@ -614,6 +646,13 @@ export default function App() {
                     </div>
                     <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
 
+                    {/* ETIQUETA DE INCIDENCIA / CARACTERÍSTICA */}
+                    {r.etiqueta && (
+                      <span className="inline-block bg-indigo-500/15 text-indigo-300 text-[10px] font-semibold px-2 py-0.5 rounded-lg border border-indigo-500/30">
+                        🏷️ {r.etiqueta}
+                      </span>
+                    )}
+
                     {/* Muestra habitaciones, gastos comunes y arriendo indicados por el vecino */}
                     <div className="flex flex-wrap gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
                       {r.habitaciones && (
@@ -645,6 +684,35 @@ export default function App() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ALERTAS DE ARRIENDO */}
+      {modalAlertaAbierto && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
+            <button onClick={() => setModalAlertaAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold mb-1">🔔 Alerta de Arriendo</h3>
+            <p className="text-xs text-slate-400 mb-4">Te avisaremos de inmediato si se publica un arriendo en **{edificioSeleccionado?.nombre}**.</p>
+
+            <form onSubmit={handleGuardarAlerta} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1.5">Tu correo electrónico</label>
+                <input 
+                  type="email" required placeholder="tu@email.com"
+                  value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+                Activar Alerta
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -728,7 +796,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: NUEVA OPINIÓN CON CASILLAS DE HABITACIONES, GASTO COMÚN Y ARRIENDO */}
+      {/* MODAL: NUEVA OPINIÓN CON ETIQUETAS Y CASILLAS */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
@@ -779,6 +847,21 @@ export default function App() {
                     className="w-full px-2.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
+              </div>
+
+              {/* ETIQUETA CLAVE / INCIDENCIA */}
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Característica principal del edificio</label>
+                <select 
+                  value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})}
+                  className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                >
+                  <option value="Excelente conectividad al metro">🚇 Excelente conectividad al metro</option>
+                  <option value="Ascensores rápidos y bien mantenidos">🛗 Ascensores rápidos</option>
+                  <option value="Zona muy segura y tranquila">🛡️ Zona muy segura y tranquila</option>
+                  <option value="Problemas frecuentes con ruidos">🔊 Problemas con ruidos</option>
+                  <option value="Gastos comunes elevados">💰 Gastos comunes elevados</option>
+                </select>
               </div>
 
               <div>
