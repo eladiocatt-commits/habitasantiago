@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -50,7 +50,7 @@ function GaleriaFotosEdificio({ resenas }) {
               className="w-full h-full object-cover group-hover:scale-110 transition duration-300" 
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-              <span className="text-[10px] text-white font-medium truncate">★ {r.titulo}</span>
+              <span className="text-[10px] text-white font-medium truncate">{r.titulo ? `★ ${r.titulo}` : 'Foto vecinal'}</span>
             </div>
           </div>
         ))}
@@ -74,6 +74,7 @@ export default function App() {
 
   // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
+  const [modalFotoAbierto, setModalFotoAbierto] = useState(false); // NUEVO MODAL SOLO PARA FOTOS
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState('login'); 
@@ -89,6 +90,9 @@ export default function App() {
   const [nuevaResena, setNuevaResena] = useState({
     titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3
   });
+
+  // Estado para la subida rápida de solo foto
+  const [archivoFotoRapida, setArchivoFotoRapida] = useState(null);
 
   // Edificio Form
   const [nuevoEdificio, setNuevoEdificio] = useState({
@@ -200,6 +204,46 @@ export default function App() {
       setResenas(res.data || []);
       cargarEdificios();
     } else { alert('Error al guardar la reseña.'); }
+    setEnviando(false);
+  };
+
+  // NUEVA FUNCIÓN PARA SUBIR SOLO FOTO RÁPIDA
+  const handleGuardarFotoRapida = async (e) => {
+    e.preventDefault();
+    if (!edificioSeleccionado || !session || !archivoFotoRapida) return;
+    setEnviando(true);
+
+    let fotoUrl = null;
+    const fileExt = archivoFotoRapida.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `resenas/${fileName}`;
+    const { error: uploadError } = await supabase.storage.from('fotos-edificios').upload(filePath, archivoFotoRapida);
+    
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage.from('fotos-edificios').getPublicUrl(filePath);
+      fotoUrl = publicUrlData.publicUrl;
+    }
+
+    const { error } = await supabase.from('resenas').insert([{
+      edificio_id: edificioSeleccionado.id,
+      titulo: 'Foto de fachada',
+      comentario: 'Aporte fotográfico de la comunidad.',
+      nota_ruido: 3,
+      nota_administracion: 3,
+      nota_gastos_comunes: 3,
+      nota_seguridad: 3,
+      url_imagen: fotoUrl,
+      usuario_email: session.user.email,
+      es_verificado: true
+    }]);
+
+    if (!error) {
+      setModalFotoAbierto(false);
+      setArchivoFotoRapida(null);
+      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
+      setResenas(res.data || []);
+      cargarEdificios();
+    } else { alert('Error al subir la foto.'); }
     setEnviando(false);
   };
 
@@ -388,7 +432,7 @@ export default function App() {
               <MapPin className="w-3.5 h-3.5 text-indigo-400" /> {edificioSeleccionado.direccion}
             </p>
 
-            {/* FOTO DE PORTADA INTELIGENTE (Por comuna o por reseña real) */}
+            {/* FOTO DE PORTADA INTELIGENTE CON BOTÓN RÁPIDO PARA AGREGAR FOTO */}
             {(() => {
               const fotoResena = resenas.find(r => r.url_imagen)?.url_imagen;
               const fotosPorComuna = {
@@ -400,16 +444,29 @@ export default function App() {
               const fotoFinal = fotoResena || fotosPorComuna[edificioSeleccionado.comuna] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80';
 
               return (
-                <div 
-                  className="w-full h-40 rounded-2xl overflow-hidden border border-slate-700/60 shadow-lg mb-4 relative group cursor-pointer" 
-                  onClick={() => window.open(fotoFinal, '_blank')}
-                >
-                  <img src={fotoFinal} alt="Edificio" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-2.5">
+                <div className="w-full h-40 rounded-2xl overflow-hidden border border-slate-700/60 shadow-lg mb-3 relative group">
+                  <img 
+                    src={fotoFinal} 
+                    alt="Edificio" 
+                    className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition duration-300" 
+                    onClick={() => window.open(fotoFinal, '_blank')}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end justify-between p-2.5 pointer-events-none">
                     <span className="text-[10px] text-white font-medium bg-slate-900/80 px-2 py-0.5 rounded-md backdrop-blur-md">
-                      {fotoResena ? '📷 Foto de la comunidad' : '🏙️ Vista referencial del edificio'}
+                      {fotoResena ? '📷 Foto de la comunidad' : '🏙️ Vista referencial'}
                     </span>
                   </div>
+                  {/* Botón flotante rápido para agregar foto */}
+                  <button 
+                    onClick={() => {
+                      if (!session) { setModoAuth('login'); setModalAuthAbierto(true); }
+                      else { setModalFotoAbierto(true); }
+                    }}
+                    className="absolute top-2 right-2 bg-slate-900/80 hover:bg-indigo-600 text-white p-2 rounded-xl backdrop-blur-md transition shadow-md flex items-center gap-1 text-[10px] font-semibold"
+                    title="Agregar foto a este edificio"
+                  >
+                    <Camera className="w-3.5 h-3.5" /> Agregar Foto
+                  </button>
                 </div>
               );
             })()}
@@ -479,6 +536,35 @@ export default function App() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SUBIR FOTO RÁPIDA */}
+      {modalFotoAbierto && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
+            <button onClick={() => setModalFotoAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold mb-1">Agregar Foto</h3>
+            <p className="text-xs text-slate-400 mb-4">{edificioSeleccionado?.nombre}</p>
+
+            <form onSubmit={handleGuardarFotoRapida} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1.5">Selecciona una imagen</label>
+                <input 
+                  type="file" accept="image/*" required
+                  onChange={(e) => setArchivoFotoRapida(e.target.files[0])}
+                  className="w-full text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/20 file:text-indigo-400 hover:file:bg-indigo-600/30"
+                />
+              </div>
+
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+                {enviando ? 'Subiendo foto...' : 'Subir y actualizar portada'}
+              </button>
+            </form>
           </div>
         </div>
       )}
