@@ -57,10 +57,10 @@ function GaleriaFotosEdificio({ resenas }) {
   );
 }
 
-// Componente para mostrar el mapa automático de Google sin usar API pagada
+// Componente para mostrar el mapa automático de Google sin errores
 const VistaMapaEdificio = ({ direccion, nombre }) => {
   const queryConsulta = encodeURIComponent(`${nombre}, ${direccion}, Santiago, Chile`);
-  const urlGoogleMaps = `https://www.maps.google.com/maps?q=${queryConsulta}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  const urlGoogleMaps = `https://maps.google.com/maps?q=${queryConsulta}&output=embed`;
 
   return (
     <div className="w-full h-64 rounded-xl overflow-hidden shadow-md bg-gray-100 mt-3">
