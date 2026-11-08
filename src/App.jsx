@@ -57,6 +57,26 @@ function GaleriaFotosEdificio({ resenas }) {
   );
 }
 
+// Componente para mostrar el mapa automático de Google sin usar API pagada
+const VistaMapaEdificio = ({ direccion, nombre }) => {
+  const queryConsulta = encodeURIComponent(`${nombre}, ${direccion}, Santiago, Chile`);
+  const urlGoogleMaps = `https://www.maps.google.com/maps?q=${queryConsulta}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+
+  return (
+    <div className="w-full h-64 rounded-xl overflow-hidden shadow-md bg-gray-100 mt-3">
+      <iframe
+        title={`Mapa de ${nombre}`}
+        width="100%"
+        height="100%"
+        style={{ border: 0 }}
+        loading="lazy"
+        allowFullScreen
+        src={urlGoogleMaps}
+      ></iframe>
+    </div>
+  );
+};
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [edificios, setEdificios] = useState([]);
@@ -83,8 +103,8 @@ export default function App() {
   const [modoAuth, setModoAuth] = useState('login'); // 'login' o 'registro'
   const [enviando, setEnviando] = useState(false);
 
-  // Sistema de Notificaciones Propias (Toasts) en reemplazo de alerts de Chrome
-  const [mensajeNotificacion, setMensajeNotificacion] = useState(null); // { tipo: 'success' | 'error', texto: '' }
+  // Sistema de Notificaciones Propias (Toasts)
+  const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
 
   const mostrarAviso = (texto, tipo = 'success') => {
     setMensajeNotificacion({ texto, tipo });
@@ -238,7 +258,7 @@ export default function App() {
         email: authEmail, 
         password: authPassword,
         options: {
-          emailRedirectTo: window.location.origin // Evita problemas de localhost rígido
+          emailRedirectTo: window.location.origin
         }
       });
       if (error) {
@@ -294,7 +314,6 @@ export default function App() {
       etiqueta: nuevaResena.etiqueta,
       url_imagen: fotoUrl,
       usuario_email: session.user.email,
-      es_verificado: true
     }]);
 
     if (!error) {
@@ -423,7 +442,7 @@ export default function App() {
   return (
     <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
       
-      {/* NOTIFICACIÓN FLOTANTE (TOAST) EN REEMPLAZO DE ALERTAS NATIVAS */}
+      {/* NOTIFICACIÓN FLOTANTE (TOAST) */}
       {mensajeNotificacion && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[99999] bg-slate-900 border border-slate-700 shadow-2xl px-4 py-3 rounded-2xl flex items-center gap-2.5 animate-bounce">
           {mensajeNotificacion.tipo === 'success' ? (
@@ -633,8 +652,14 @@ export default function App() {
               );
             })()}
 
+            {/* MAPA AUTOMÁTICO DE GOOGLE INTEGRADO */}
+            <VistaMapaEdificio 
+              direccion={edificioSeleccionado.direccion} 
+              nombre={edificioSeleccionado.nombre} 
+            />
+
             {/* PROMEDIOS POR HABITACIÓN Y GASTOS COMUNES */}
-            <div className="space-y-2 mb-3">
+            <div className="space-y-2 my-3">
               <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-amber-400 flex-shrink-0" />
@@ -851,7 +876,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: AUTENTICACIÓN MEJORADO (CON TABS CLARAS Y AVISO DE CORREO AMIGABLE) */}
+      {/* MODAL: AUTENTICACIÓN */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
@@ -859,7 +884,6 @@ export default function App() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Selector de Pestañas (Tabs) Interactivas */}
             <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-5">
               <button 
                 type="button"
