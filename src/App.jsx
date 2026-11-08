@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, User, Trash2, Bookmark, Settings
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, User, Trash2, Bookmark, Settings, KeyRound
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -92,8 +92,9 @@ export default function App() {
 
   // Sidebar y Perfil
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
-  const [vistaSidebar, setVistaSidebar] = useState('perfil');
+  const [vistaSidebar, setVistaSidebar] = useState('perfil'); // 'perfil', 'favoritos', 'password'
   const [nombreUsuario, setNombreUsuario] = useState('');
+  const [nuevaPasswordSidebar, setNuevaPasswordSidebar] = useState('');
 
   // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
@@ -102,7 +103,7 @@ export default function App() {
   const [modalAdminAbierto, setModalAdminAbierto] = useState(false);
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
-  const [modoAuth, setModoAuth] = useState('login');
+  const [modoAuth, setModoAuth] = useState('login'); // 'login', 'registro', 'recuperar'
   const [enviando, setEnviando] = useState(false);
 
   // Interruptor para datos opcionales de arriendo/gastos comunes
@@ -122,6 +123,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [registroExitosoMsg, setRegistroExitosoMsg] = useState(false);
+  const [recuperacionEnviada, setRecuperacionEnviada] = useState(false);
 
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
@@ -313,13 +315,34 @@ export default function App() {
       });
       if (error) setAuthError(error.message);
       else setRegistroExitosoMsg(true);
-    } else {
+    } else if (modoAuth === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
       if (error) setAuthError('Correo o contraseña incorrectos.');
       else {
         setModalAuthAbierto(false);
         mostrarAviso('¡Bienvenido de vuelta a HabitaSantiago!');
       }
+    } else if (modoAuth === 'recuperar') {
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
+        redirectTo: window.location.origin,
+      });
+      if (error) setAuthError(error.message);
+      else setRecuperacionEnviada(true);
+    }
+    setEnviando(false);
+  };
+
+  const handleCambiarPasswordSidebar = async (e) => {
+    e.preventDefault();
+    if (!nuevaPasswordSidebar) return;
+    setEnviando(true);
+
+    const { error } = await supabase.auth.updateUser({ password: nuevaPasswordSidebar });
+    if (!error) {
+      mostrarAviso('¡Contraseña actualizada con éxito!');
+      setNuevaPasswordSidebar('');
+    } else {
+      mostrarAviso('Error al actualizar la contraseña.', 'error');
     }
     setEnviando(false);
   };
@@ -330,7 +353,6 @@ export default function App() {
     mostrarAviso('Has cerrado sesión correctamente.');
   };
 
-  // Guardar Reseña con campos opcionales controlados y sin errores
   const handleGuardarResena = async (e) => {
     e.preventDefault();
     if (!edificioSeleccionado || !session) return;
@@ -359,14 +381,18 @@ export default function App() {
       etiqueta: nuevaResena.etiqueta,
       url_imagen: fotoUrl,
       usuario_email: session.user.email,
-      util_count: 0 // Blindaje: siempre inicia en cero
+      util_count: 0
     };
 
+    // Si el usuario activó el interruptor, guardamos los datos opcionales. Si no, van en null para que no aparezca "1 habitación" por defecto.
     if (incluirDatosEconomicos) {
-      // Usamos parseInt para asegurar que sea un número y no haya rechazo de base de datos
       objetoResena.habitaciones = nuevaResena.habitaciones ? parseInt(nuevaResena.habitaciones) : 1;
       objetoResena.gasto_comun = nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null;
       objetoResena.arriendo = nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null;
+    } else {
+      objetoResena.habitaciones = null;
+      objetoResena.gasto_comun = null;
+      objetoResena.arriendo = null;
     }
 
     const { error } = await supabase.from('resenas').insert([objetoResena]);
@@ -382,8 +408,7 @@ export default function App() {
       mostrarAviso('¡Tu opinión ha sido publicada con éxito!');
     } else { 
       console.error(error);
-      // 🔥 Ahora el globo rojo te mostrará el error EXACTO que dispara la base de datos
-      mostrarAviso(`Info Supabase: ${error.message || error.details}`, 'error'); 
+      mostrarAviso('Error al guardar la reseña.', 'error'); 
     }
     setEnviando(false);
   };
@@ -608,6 +633,12 @@ export default function App() {
                   <Settings className="w-4 h-4" /> Mi Perfil
                 </button>
                 <button 
+                  onClick={() => setVistaSidebar('password')}
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${vistaSidebar === 'password' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+                >
+                  <KeyRound className="w-4 h-4" /> Cambiar Contraseña
+                </button>
+                <button 
                   onClick={() => setVistaSidebar('favoritos')}
                   className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${vistaSidebar === 'favoritos' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
                 >
@@ -635,6 +666,27 @@ export default function App() {
                       Guardar Cambios
                     </button>
                   </div>
+                )}
+
+                {vistaSidebar === 'password' && (
+                  <form onSubmit={handleCambiarPasswordSidebar} className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3 text-xs">
+                    <h4 className="font-bold text-indigo-400">Seguridad de la cuenta</h4>
+                    <div>
+                      <label className="block text-slate-400 mb-1">Nueva contraseña</label>
+                      <input 
+                        type="password" required minLength={6} placeholder="Mínimo 6 caracteres"
+                        value={nuevaPasswordSidebar} 
+                        onChange={(e) => setNuevaPasswordSidebar(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white outline-none"
+                      />
+                    </div>
+                    <button 
+                      type="submit" disabled={enviando}
+                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl font-semibold transition shadow"
+                    >
+                      {enviando ? 'Actualizando...' : 'Actualizar contraseña'}
+                    </button>
+                  </form>
                 )}
 
                 {vistaSidebar === 'favoritos' && (
@@ -744,7 +796,7 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* TARJETA INFERIOR REORGANIZADA (BOTONES PRINCIPALES ARRIBA) */}
+      {/* TARJETA INFERIOR */}
       {edificioSeleccionado && (
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
           <div className="bg-slate-900/95 backdrop-blur-2xl border border-slate-700/85 rounded-3xl p-4 shadow-2xl relative max-h-[78vh] overflow-y-auto">
@@ -773,7 +825,6 @@ export default function App() {
               <MapPin className="w-3.5 h-3.5 text-indigo-400" /> {edificioSeleccionado.direccion}
             </p>
 
-            {/* BOTONES PRINCIPALES ARRIBA DE TODO */}
             <div className="grid grid-cols-2 gap-2 mb-3">
               <button 
                 onClick={() => {
@@ -925,6 +976,7 @@ export default function App() {
                         </span>
                       )}
 
+                      {/* SE MUESTRA SOLO SI EL USUARIO ACTIVÓ Y LLENÓ LOS DATOS ECONÓMICOS */}
                       {(r.habitaciones || r.gasto_comun || r.arriendo) && (
                         <div className="flex flex-wrap gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 text-[11px]">
                           {r.habitaciones && <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>}
@@ -1033,18 +1085,41 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL AUTH */}
+      {/* MODAL AUTH (CON OPCIÓN DE OLVIDÉ MI CONTRASEÑA) */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
             <button onClick={() => setModalAuthAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
               <X className="w-5 h-5" />
             </button>
-            <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-5">
-              <button type="button" onClick={() => { setModoAuth('login'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Iniciar Sesión</button>
-              <button type="button" onClick={() => { setModoAuth('registro'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'registro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Registrarse</button>
-            </div>
-            {registroExitosoMsg ? (
+
+            {modoAuth !== 'recuperar' && (
+              <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-5">
+                <button type="button" onClick={() => { setModoAuth('login'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Iniciar Sesión</button>
+                <button type="button" onClick={() => { setModoAuth('registro'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'registro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Registrarse</button>
+              </div>
+            )}
+
+            {recuperacionEnviada ? (
+              <div className="bg-emerald-950/50 border border-emerald-800/80 p-4 rounded-2xl text-center space-y-3">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                <h4 className="font-bold text-sm text-white">¡Correo enviado!</h4>
+                <p className="text-xs text-slate-300">Revisa tu bandeja para restablecer tu contraseña.</p>
+                <button onClick={() => { setModoAuth('login'); setRecuperacionEnviada(false); }} className="w-full bg-emerald-600 text-white py-2 rounded-xl text-xs">Volver a Iniciar Sesión</button>
+              </div>
+            ) : modoAuth === 'recuperar' ? (
+              <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-xs">
+                <h3 className="text-base font-bold mb-1">Recuperar Contraseña</h3>
+                <p className="text-slate-400 mb-3">Te enviaremos un enlace a tu correo para que crees una nueva clave.</p>
+                {authError && <p className="text-xs text-red-400 bg-red-950/50 p-2 rounded-xl">{authError}</p>}
+                <div>
+                  <label className="block text-slate-300 mb-1">Tu Correo Electrónico</label>
+                  <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none text-white" />
+                </div>
+                <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl transition shadow-lg">{enviando ? 'Enviando...' : 'Enviar enlace de recuperación'}</button>
+                <button type="button" onClick={() => { setModoAuth('login'); setAuthError(''); }} className="w-full text-slate-400 hover:text-white pt-2 text-center block">← Volver al inicio de sesión</button>
+              </form>
+            ) : registroExitosoMsg ? (
               <div className="bg-emerald-950/50 border border-emerald-800/80 p-4 rounded-2xl text-center space-y-3">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
                 <h4 className="font-bold text-sm text-white">¡Registro completado!</h4>
@@ -1062,6 +1137,15 @@ export default function App() {
                   <label className="block text-slate-300 mb-1">Contraseña</label>
                   <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none text-white" />
                 </div>
+
+                {modoAuth === 'login' && (
+                  <div className="text-right">
+                    <button type="button" onClick={() => { setModoAuth('recuperar'); setAuthError(''); }} className="text-[11px] text-indigo-400 hover:underline">
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
+                )}
+
                 <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl transition mt-2 shadow-lg">{enviando ? 'Procesando...' : modoAuth === 'login' ? 'Entrar' : 'Registrarse'}</button>
               </form>
             )}
@@ -1069,7 +1153,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL NUEVA OPINIÓN CON INTERRUPTOR OPCIONAL PARA DATOS ECONÓMICOS */}
+      {/* MODAL NUEVA OPINIÓN */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
@@ -1090,7 +1174,7 @@ export default function App() {
 
               <textarea required rows="3" placeholder="Comentario detallado sobre tu experiencia..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
 
-              {/* BOTÓN / INTERRUPTOR PARA ACTIVAR DATOS ECONÓMICOS OPCIONALES */}
+              {/* INTERRUPTOR OPCIONAL PARA DATOS ECONÓMICOS */}
               <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-3">
                 <label className="flex items-center justify-between cursor-pointer">
                   <span className="font-semibold text-slate-300">📊 ¿Agregar datos de arriendo o gastos comunes? (Opcional)</span>
