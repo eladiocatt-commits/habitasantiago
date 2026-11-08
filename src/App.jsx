@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp
 } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -59,12 +59,11 @@ function GaleriaFotosEdificio({ resenas }) {
 
 const VistaMapaEdificio = ({ direccion, nombre }) => {
   const textoBusqueda = encodeURIComponent(`${nombre}, ${direccion}, Santiago, Chile`);
-  const urlMapaLimpio = `https://www.openstreetmap.org/search?query=${textoBusqueda}#map=16/-33.4489/-70.6693`;
 
   return (
-    <div className="w-full h-64 rounded-xl overflow-hidden shadow-md bg-slate-900 mt-3 border border-slate-700/60 flex flex-col items-center justify-center p-4 text-center">
-      <div className="mb-3">
-        <span className="text-2xl">🗺️</span>
+    <div className="w-full h-40 rounded-2xl overflow-hidden shadow-md bg-slate-900 mt-3 border border-slate-700/60 flex flex-col items-center justify-center p-4 text-center">
+      <div className="mb-2">
+        <span className="text-xl">🗺️</span>
         <h4 className="text-xs font-bold text-white mt-1">Ubicación exacta en el mapa</h4>
         <p className="text-[11px] text-slate-400 mt-0.5">{direccion}, Santiago</p>
       </div>
@@ -72,7 +71,7 @@ const VistaMapaEdificio = ({ direccion, nombre }) => {
         href={`https://www.google.com/maps/search/?api=1&query=${textoBusqueda}`} 
         target="_blank" 
         rel="noopener noreferrer"
-        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-1.5"
+        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-1.5"
       >
         📍 Ver fachada y mapa en Google Maps
       </a>
@@ -90,23 +89,19 @@ export default function App() {
   const [resenas, setResenas] = useState([]);
   const [cargandoResenas, setCargandoResenas] = useState(false);
   
-  // Filtros y Favoritos
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
-  const [filtroPresupuesto, setFiltroPresupuesto] = useState('todos');
   const [favoritos, setFavoritos] = useState([]);
 
-  // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
   const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false);
   const [modalAdminAbierto, setModalAdminAbierto] = useState(false);
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
-  const [modoAuth, setModoAuth] = useState('login'); // 'login' o 'registro'
+  const [modoAuth, setModoAuth] = useState('login');
   const [enviando, setEnviando] = useState(false);
 
-  // Sistema de Notificaciones Propias (Toasts)
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
 
   const mostrarAviso = (texto, tipo = 'success') => {
@@ -116,16 +111,13 @@ export default function App() {
     }, 4000);
   };
 
-  // Leads de Alertas para Admin
   const [listaAlertas, setListaAlertas] = useState([]);
 
-  // Auth Form
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [registroExitosoMsg, setRegistroExitosoMsg] = useState(false);
 
-  // Reseña Form
   const [archivoFoto, setArchivoFoto] = useState(null);
   const [nuevaResena, setNuevaResena] = useState({
     titulo: '', 
@@ -201,7 +193,7 @@ export default function App() {
         .from('resenas')
         .select('*')
         .eq('edificio_id', edificioSeleccionado.id)
-        .order('creado_en', { ascending: false });
+        .order('util_count', { ascending: false }); // Ordenadas por las más útiles primero
 
       if (!error) setResenas(data || []);
       setCargandoResenas(false);
@@ -209,6 +201,22 @@ export default function App() {
 
     cargarResenas();
   }, [edificioSeleccionado]);
+
+  // Función para dar "Me gusta" o marcar como útil una reseña
+  const handleDarUtil = async (resenaId, actualCount) => {
+    const nuevoCount = (actualCount || 0) + 1;
+    const { error } = await supabase
+      .from('resenas')
+      .update({ util_count: nuevoCount })
+      .eq('id', resenaId);
+
+    if (!error) {
+      setResenas(resenas.map(r => r.id === resenaId ? { ...r, util_count: nuevoCount } : r));
+      mostrarAviso('¡Gracias! Reseña marcada como útil.');
+    } else {
+      mostrarAviso('Error al registrar voto.', 'error');
+    }
+  };
 
   const cargarAlertasAdmin = async () => {
     const { data, error } = await supabase
@@ -260,20 +268,14 @@ export default function App() {
       const { error } = await supabase.auth.signUp({ 
         email: authEmail, 
         password: authPassword,
-        options: {
-          emailRedirectTo: window.location.origin
-        }
+        options: { emailRedirectTo: window.location.origin }
       });
-      if (error) {
-        setAuthError(error.message);
-      } else {
-        setRegistroExitosoMsg(true);
-      }
+      if (error) setAuthError(error.message);
+      else setRegistroExitosoMsg(true);
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-      if (error) {
-        setAuthError('Correo o contraseña incorrectos.');
-      } else {
+      if (error) setAuthError('Correo o contraseña incorrectos.');
+      else {
         setModalAuthAbierto(false);
         mostrarAviso('¡Bienvenido de vuelta a HabitaSantiago!');
       }
@@ -323,7 +325,7 @@ export default function App() {
       setModalResenaAbierto(false);
       setArchivoFoto(null);
       setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: 'Excelente conectividad al metro' });
-      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
+      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('util_count', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
       mostrarAviso('¡Tu opinión ha sido publicada con éxito!');
@@ -385,7 +387,7 @@ export default function App() {
     if (!error) {
       setModalFotoAbierto(false);
       setArchivoFotoRapida(null);
-      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
+      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('util_count', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
       mostrarAviso('¡Foto de portada actualizada con éxito!');
@@ -445,7 +447,6 @@ export default function App() {
   return (
     <div className="w-screen h-screen overflow-hidden bg-slate-950 font-sans relative text-white">
       
-      {/* NOTIFICACIÓN FLOTANTE (TOAST) */}
       {mensajeNotificacion && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[99999] bg-slate-900 border border-slate-700 shadow-2xl px-4 py-3 rounded-2xl flex items-center gap-2.5 animate-bounce">
           {mensajeNotificacion.tipo === 'success' ? (
@@ -457,7 +458,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 1. BARRA SUPERIOR FLOTANTE */}
+      {/* BARRA SUPERIOR */}
       <header className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between gap-4 pointer-events-none">
         <div className="pointer-events-auto bg-slate-900/85 backdrop-blur-xl border border-slate-700/50 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2">
           <Building className="w-5 h-5 text-indigo-400" />
@@ -480,7 +481,6 @@ export default function App() {
             <button 
               onClick={cargarAlertasAdmin}
               className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1 transition shadow-lg shadow-amber-600/30"
-              title="Panel de Leads y Alertas"
             >
               <ShieldAlert className="w-3.5 h-3.5" /> Admin Leads
             </button>
@@ -499,7 +499,6 @@ export default function App() {
           {session ? (
             <button 
               onClick={handleCerrarSesion}
-              title={`Cerrar sesión (${session.user.email})`}
               className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
@@ -515,7 +514,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* 2. FILTROS RÁPIDOS */}
+      {/* FILTROS RÁPIDOS */}
       <div className="absolute top-20 left-4 right-4 z-20 flex justify-center pointer-events-none">
         <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/50 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 overflow-x-auto max-w-full no-scrollbar">
           <button 
@@ -552,7 +551,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* 3. MAPA PRINCIPAL */}
+      {/* MAPA PRINCIPAL */}
       <div className="absolute inset-0 w-full h-full z-0">
         <MapContainer 
           center={[-33.4489, -70.6693]} 
@@ -588,7 +587,7 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* 4. TARJETA INFERIOR DESLIZANTE */}
+      {/* TARJETA INFERIOR DESLIZANTE */}
       {edificioSeleccionado && (
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
           <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/85 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
@@ -597,7 +596,6 @@ export default function App() {
               <button 
                 onClick={(e) => toggleFavorito(edificioSeleccionado.id, e)}
                 className={`p-2 rounded-full transition ${favoritos.includes(edificioSeleccionado.id) ? 'bg-rose-500/20 text-rose-500' : 'bg-slate-800/80 text-slate-400 hover:text-white'}`}
-                title="Guardar en favoritos"
               >
                 <Heart className={`w-4 h-4 ${favoritos.includes(edificioSeleccionado.id) ? 'fill-rose-500' : ''}`} />
               </button>
@@ -655,13 +653,12 @@ export default function App() {
               );
             })()}
 
-            {/* MAPA AUTOMÁTICO DE GOOGLE INTEGRADO */}
             <VistaMapaEdificio 
               direccion={edificioSeleccionado.direccion} 
               nombre={edificioSeleccionado.nombre} 
             />
 
-            {/* PROMEDIOS POR HABITACIÓN Y GASTOS COMUNES */}
+            {/* PROMEDIOS Y GASTOS */}
             <div className="space-y-2 my-3">
               <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -699,7 +696,6 @@ export default function App() {
               <span>{resenas.length} opiniones vecinales</span>
             </div>
 
-            {/* BOTÓN DE ALERTA DE ARRIENDO */}
             <button 
               onClick={() => setModalAlertaAbierto(true)}
               className="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 py-2.5 px-3 rounded-xl font-semibold text-xs transition mb-4 flex items-center justify-center gap-1.5 shadow-lg"
@@ -725,11 +721,11 @@ export default function App() {
               </button>
             </div>
 
-            {/* Galería de fotos */}
             <GaleriaFotosEdificio resenas={resenas} />
 
+            {/* SECCIÓN DE OPINIONES CON BOTÓN DE ÚTIL (ME GUSTA) */}
             <div className="space-y-3 pt-3 border-t border-slate-800">
-              <h3 className="font-semibold text-xs text-slate-400 uppercase tracking-wider">Últimas Opiniones</h3>
+              <h3 className="font-semibold text-xs text-slate-400 uppercase tracking-wider">Últimas Opiniones (Más útiles primero)</h3>
 
               {cargandoResenas ? (
                 <p className="text-xs text-slate-500 text-center py-3">Cargando...</p>
@@ -740,9 +736,15 @@ export default function App() {
                   <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2 text-xs">
                     <div className="flex justify-between items-start">
                       <h4 className="font-semibold text-white">{r.titulo}</h4>
-                      {r.es_verificado && (
-                        <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">Verificado</span>
-                      )}
+                      {/* BOTÓN DE ÚTIL / ME GUSTA */}
+                      <button 
+                        onClick={() => handleDarUtil(r.id, r.util_count)}
+                        className="flex items-center gap-1 bg-slate-900 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 border border-slate-800 px-2 py-1 rounded-xl transition text-[10px] font-semibold"
+                        title="Marcar como útil"
+                      >
+                        <ThumbsUp className="w-3 h-3 text-indigo-400" /> 
+                        <span>{r.util_count || 0}</span>
+                      </button>
                     </div>
                     <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
 
@@ -786,27 +788,24 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: PANEL DE ADMINISTRACIÓN DE LEADS / ALERTAS */}
+      {/* MODAL ADMIN LEADS */}
       {modalAdminAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative text-white max-h-[85vh] overflow-y-auto">
             <button onClick={() => setModalAdminAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
               <X className="w-5 h-5" />
             </button>
-
             <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
               <ShieldAlert className="text-amber-400" /> Panel de Leads / Alertas de Arriendo
             </h3>
-            <p className="text-xs text-slate-400 mb-4">Lista de correos registrados por usuarios esperando un arriendo en edificios específicos.</p>
-
             {listaAlertas.length === 0 ? (
               <p className="text-xs text-slate-500 text-center py-8">No hay alertas registradas todavía.</p>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 mt-4">
                 {listaAlertas.map((alerta) => (
                   <div key={alerta.id} className="bg-slate-950/60 border border-slate-800 p-3 rounded-2xl flex items-center justify-between text-xs">
                     <div>
-                      <div className="font-bold text-indigo-400">{alerta.edificios?.nombre || 'Edificio desconocido'}</div>
+                      <div className="font-bold text-indigo-400">{alerta.edificios?.nombre || 'Edificio'}</div>
                       <div className="text-[10px] text-slate-400">{alerta.edificios?.comuna || ''}</div>
                     </div>
                     <div className="text-right">
@@ -821,28 +820,22 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: ALERTAS DE ARRIENDO */}
+      {/* MODAL ALERTA ARRIENDO */}
       {modalAlertaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
             <button onClick={() => setModalAlertaAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
               <X className="w-5 h-5" />
             </button>
-
             <h3 className="text-lg font-bold mb-1">🔔 Alerta de Arriendo</h3>
             <p className="text-xs text-slate-400 mb-4">Te avisaremos de inmediato si se publica un arriendo en <b>{edificioSeleccionado?.nombre}</b>.</p>
-
             <form onSubmit={handleGuardarAlerta} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1.5">Tu correo electrónico</label>
-                <input 
-                  type="email" required placeholder="tu@email.com"
-                  value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+              <input 
+                type="email" required placeholder="tu@email.com"
+                value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white outline-none"
+              />
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">
                 {enviando ? 'Guardando...' : 'Activar Alerta'}
               </button>
             </form>
@@ -850,276 +843,107 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: SUBIR FOTO RÁPIDA */}
+      {/* MODAL SUBIR FOTO */}
       {modalFotoAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
             <button onClick={() => setModalFotoAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
               <X className="w-5 h-5" />
             </button>
-
             <h3 className="text-lg font-bold mb-1">Agregar Foto</h3>
-            <p className="text-xs text-slate-400 mb-4">{edificioSeleccionado?.nombre}</p>
-
-            <form onSubmit={handleGuardarFotoRapida} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1.5">Selecciona una imagen</label>
-                <input 
-                  type="file" accept="image/*" required
-                  onChange={(e) => setArchivoFotoRapida(e.target.files[0])}
-                  className="w-full text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/20 file:text-indigo-400 hover:file:bg-indigo-600/30"
-                />
-              </div>
-
-              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
-                {enviando ? 'Subiendo foto...' : 'Subir y actualizar portada'}
+            <form onSubmit={handleGuardarFotoRapida} className="space-y-4 text-xs mt-3">
+              <input 
+                type="file" accept="image/*" required
+                onChange={(e) => setArchivoFotoRapida(e.target.files[0])}
+                className="w-full text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/20 file:text-indigo-400"
+              />
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">
+                {enviando ? 'Subiendo...' : 'Actualizar portada'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: AUTENTICACIÓN */}
+      {/* MODAL AUTH */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative text-white">
             <button onClick={() => setModalAuthAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
               <X className="w-5 h-5" />
             </button>
-
             <div className="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-5">
-              <button 
-                type="button"
-                onClick={() => { setModoAuth('login'); setAuthError(''); setRegistroExitosoMsg(false); }}
-                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                Iniciar Sesión
-              </button>
-              <button 
-                type="button"
-                onClick={() => { setModoAuth('registro'); setAuthError(''); setRegistroExitosoMsg(false); }}
-                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'registro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-              >
-                Registrarse
-              </button>
+              <button type="button" onClick={() => { setModoAuth('login'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'login' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Iniciar Sesión</button>
+              <button type="button" onClick={() => { setModoAuth('registro'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${modoAuth === 'registro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Registrarse</button>
             </div>
-
             {registroExitosoMsg ? (
               <div className="bg-emerald-950/50 border border-emerald-800/80 p-4 rounded-2xl text-center space-y-3">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                <h4 className="font-bold text-sm text-white">¡Registro completado con éxito!</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Te hemos enviado un enlace de confirmación a tu correo. Haz clic en él para activar tu cuenta y luego regresa aquí para iniciar sesión.
-                </p>
-                <button 
-                  onClick={() => { setModoAuth('login'); setRegistroExitosoMsg(false); }} 
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-xs transition"
-                >
-                  Ir a Iniciar Sesión
-                </button>
+                <h4 className="font-bold text-sm text-white">¡Registro completado!</h4>
+                <p className="text-xs text-slate-300">Revisa tu correo para activar la cuenta.</p>
+                <button onClick={() => { setModoAuth('login'); setRegistroExitosoMsg(false); }} className="w-full bg-emerald-600 text-white py-2 rounded-xl text-xs">Ir a Iniciar Sesión</button>
               </div>
             ) : (
-              <>
-                <h3 className="text-base font-bold mb-1">
-                  {modoAuth === 'login' ? '¡Qué bueno verte de nuevo!' : 'Crea tu cuenta en HabitaSantiago'}
-                </h3>
-                <p className="text-xs text-slate-400 mb-4">
-                  {modoAuth === 'login' 
-                    ? 'Ingresa tus datos para opinar y guardar tus favoritos.' 
-                    : 'Regístrate primero para unirte a la comunidad de vecinos.'}
-                </p>
-
-                {authError && <p className="text-xs text-red-400 mb-3 bg-red-950/50 border border-red-800 p-2.5 rounded-xl">{authError}</p>}
-
-                <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-xs">
-                  <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Correo electrónico</label>
-                    <input 
-                      type="email" required placeholder="tu@email.com"
-                      value={authEmail} onChange={(e) => setAuthEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-300 mb-1">Contraseña</label>
-                    <input 
-                      type="password" required placeholder="••••••••" minLength={6}
-                      value={authPassword} onChange={(e) => setAuthPassword(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 mt-2">
-                    {enviando ? 'Procesando...' : modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarme'}
-                  </button>
-                </form>
-              </>
+              <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-xs">
+                {authError && <p className="text-xs text-red-400 bg-red-950/50 p-2 rounded-xl">{authError}</p>}
+                <div>
+                  <label className="block text-slate-300 mb-1">Correo</label>
+                  <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none text-white" />
+                </div>
+                <div>
+                  <label className="block text-slate-300 mb-1">Contraseña</label>
+                  <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none text-white" />
+                </div>
+                <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl transition mt-2 shadow-lg">{enviando ? 'Procesando...' : modoAuth === 'login' ? 'Entrar' : 'Registrarse'}</button>
+              </form>
             )}
-
           </div>
         </div>
       )}
 
-      {/* MODAL: NUEVA OPINIÓN */}
+      {/* MODAL NUEVA OPINIÓN */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
-            <button onClick={() => setModalResenaAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-              <X className="w-5 h-5" />
-            </button>
-
+            <button onClick={() => setModalResenaAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold mb-1">Publicar Opinión</h3>
-            <p className="text-xs text-slate-400 mb-4">{edificioSeleccionado?.nombre}</p>
-
-            <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Título de la opinión</label>
-                <input 
-                  type="text" required placeholder="Ej: Excelente ubicación y tranquilidad"
-                  value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
+            <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs mt-2">
+              <input type="text" required placeholder="Título (Ej: Excelente ubicación)" value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
               <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Dormitorios</label>
-                  <select 
-                    value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})}
-                    className="w-full px-2 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                  >
-                    <option value="1">1 Dorm</option>
-                    <option value="2">2 Dorm</option>
-                    <option value="3">3 Dorm</option>
-                    <option value="4">4+ Dorm</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Gasto Común ($)</label>
-                  <input 
-                    type="number" placeholder="Ej: 95000"
-                    value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})}
-                    className="w-full px-2.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Arriendo ($)</label>
-                  <input 
-                    type="number" placeholder="Ej: 450000"
-                    value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})}
-                    className="w-full px-2.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Característica principal del edificio</label>
-                <select 
-                  value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})}
-                  className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="Excelente conectividad al metro">🚇 Excelente conectividad al metro</option>
-                  <option value="Ascensores rápidos y bien mantenidos">🛗 Ascensores rápidos</option>
-                  <option value="Zona muy segura y tranquila">🛡️ Zona muy segura y tranquila</option>
-                  <option value="Problemas frecuentes con ruidos">🔊 Problemas con ruidos</option>
-                  <option value="Gastos comunes elevados">💰 Gastos comunes elevados</option>
+                <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="p-2 bg-slate-950 border border-slate-800 rounded-xl">
+                  <option value="1">1 Dorm</option><option value="2">2 Dorm</option><option value="3">3 Dorm</option><option value="4">4+ Dorm</option>
                 </select>
+                <input type="number" placeholder="Gasto Común ($)" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="p-2 bg-slate-950 border border-slate-800 rounded-xl" />
+                <input type="number" placeholder="Arriendo ($)" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="p-2 bg-slate-950 border border-slate-800 rounded-xl" />
               </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Comentario detallado</label>
-                <textarea 
-                  required rows="3" placeholder="Detalles sobre la experiencia en el edificio..."
-                  value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Foto o comprobante (Opcional)</label>
-                <input 
-                  type="file" accept="image/*"
-                  onChange={(e) => setArchivoFoto(e.target.files[0])}
-                  className="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/20 file:text-indigo-400 hover:file:bg-indigo-600/30"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 bg-slate-950/50 p-3 rounded-2xl border border-slate-800">
-                <div>
-                  <label className="text-slate-400">🔊 Ruido (1-5):</label>
-                  <input type="number" min="1" max="5" value={nuevaResena.nota_ruido} onChange={(e) => setNuevaResena({...nuevaResena, nota_ruido: e.target.value})} className="w-full p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-center font-bold text-white mt-1" />
-                </div>
-                <div>
-                  <label className="text-slate-400">🛡️ Seguridad (1-5):</label>
-                  <input type="number" min="1" max="5" value={nuevaResena.nota_seguridad} onChange={(e) => setNuevaResena({...nuevaResena, nota_seguridad: e.target.value})} className="w-full p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-center font-bold text-white mt-1" />
-                </div>
-                <div>
-                  <label className="text-slate-400">🧹 Conserjería (1-5):</label>
-                  <input type="number" min="1" max="5" value={nuevaResena.nota_administracion} onChange={(e) => setNuevaResena({...nuevaResena, nota_administracion: e.target.value})} className="w-full p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-center font-bold text-white mt-1" />
-                </div>
-                <div>
-                  <label className="text-slate-400">💰 Gastos (1-5):</label>
-                  <input type="number" min="1" max="5" value={nuevaResena.nota_gastos_comunes} onChange={(e) => setNuevaResena({...nuevaResena, nota_gastos_comunes: e.target.value})} className="w-full p-1.5 bg-slate-900 border border-slate-800 rounded-lg text-center font-bold text-white mt-1" />
-                </div>
-              </div>
-
-              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 mt-2">
-                {enviando ? 'Guardando...' : 'Publicar Opinión'}
-              </button>
+              <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl">
+                <option value="Excelente conectividad al metro">🚇 Excelente conectividad al metro</option>
+                <option value="Ascensores rápidos y bien mantenidos">🛗 Ascensores rápidos</option>
+                <option value="Zona muy segura y tranquila">🛡️ Zona muy segura y tranquila</option>
+                <option value="Problemas frecuentes con ruidos">🔊 Problemas con ruidos</option>
+                <option value="Gastos comunes elevados">💰 Gastos comunes elevados</option>
+              </select>
+              <textarea required rows="3" placeholder="Comentario detallado..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
+              <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:bg-indigo-600/20 file:text-indigo-400" />
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl shadow-lg mt-2">{enviando ? 'Guardando...' : 'Publicar Opinión'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: NUEVO EDIFICIO */}
+      {/* MODAL NUEVO EDIFICIO */}
       {modalEdificioAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-white">
-            <button onClick={() => setModalEdificioAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-              <X className="w-5 h-5" />
-            </button>
-
+            <button onClick={() => setModalEdificioAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold mb-1">Registrar Nuevo Edificio</h3>
-            <p className="text-xs text-slate-400 mb-4">Ingresa los datos para ubicarlo en el mapa de Santiago.</p>
-
-            <form onSubmit={handleGuardarEdificio} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Nombre del Edificio</label>
-                <input 
-                  type="text" required placeholder="Ej: Edificio Parque Bustamante"
-                  value={nuevoEdificio.nombre} onChange={(e) => setNuevoEdificio({...nuevoEdificio, nombre: e.target.value})}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Dirección exacta</label>
-                <input 
-                  type="text" required placeholder="Ej: Av. Bustamante 456"
-                  value={nuevoEdificio.direccion} onChange={(e) => setNuevoEdificio({...nuevoEdificio, direccion: e.target.value})}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Comuna</label>
-                <select 
-                  value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="Santiago Centro">Santiago Centro</option>
-                  <option value="Providencia">Providencia</option>
-                  <option value="Ñuñoa">Ñuñoa</option>
-                  <option value="Las Condes">Las Condes</option>
-                  <option value="San Miguel">San Miguel</option>
-                  <option value="La Reina">La Reina</option>
-                  <option value="Macul">Macul</option>
-                  <option value="Estación Central">Estación Central</option>
-                  <option value="Independencia">Independencia</option>
-                  <option value="Recoleta">Recoleta</option>
-                </select>
-              </div>
-
-              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 mt-2">
-                {enviando ? 'Ubicando en el mapa...' : 'Registrar Edificio'}
-              </button>
+            <form onSubmit={handleGuardarEdificio} className="space-y-3.5 text-xs mt-3">
+              <input type="text" required placeholder="Nombre (Ej: Edificio Parque)" value={nuevoEdificio.nombre} onChange={(e) => setNuevoEdificio({...nuevoEdificio, nombre: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
+              <input type="text" required placeholder="Dirección exacta (Ej: Av. Bustamante 456)" value={nuevoEdificio.direccion} onChange={(e) => setNuevoEdificio({...nuevoEdificio, direccion: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
+              <select value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl">
+                <option value="Santiago Centro">Santiago Centro</option><option value="Providencia">Providencia</option><option value="Ñuñoa">Ñuñoa</option><option value="Las Condes">Las Condes</option>
+              </select>
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl shadow-lg mt-2">{enviando ? 'Registrando...' : 'Registrar Edificio'}</button>
             </form>
           </div>
         </div>
