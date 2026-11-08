@@ -31,15 +31,15 @@ function GaleriaFotosEdificio({ resenas }) {
   if (fotosConResena.length === 0) return null;
 
   return (
-    <div className="space-y-2 pt-3 border-t border-slate-800">
-      <h3 className="font-semibold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+    <div className="space-y-2 pt-2 border-t border-slate-800">
+      <h3 className="font-semibold text-[11px] text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
         <span>📸</span> Fotos de la comunidad ({fotosConResena.length})
       </h3>
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         {fotosConResena.map((r, index) => (
           <div 
             key={index} 
-            className="relative flex-shrink-0 w-28 h-28 rounded-2xl overflow-hidden border border-slate-700/60 shadow-md group cursor-pointer"
+            className="relative flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border border-slate-700/60 shadow-md group cursor-pointer"
             onClick={() => window.open(r.url_imagen, '_blank')}
           >
             <img 
@@ -47,9 +47,6 @@ function GaleriaFotosEdificio({ resenas }) {
               alt="Foto vecinal" 
               className="w-full h-full object-cover group-hover:scale-110 transition duration-300" 
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-              <span className="text-[10px] text-white font-medium truncate">{r.titulo ? `★ ${r.titulo}` : 'Foto vecinal'}</span>
-            </div>
           </div>
         ))}
       </div>
@@ -61,19 +58,18 @@ const VistaMapaEdificio = ({ direccion, nombre }) => {
   const textoBusqueda = encodeURIComponent(`${nombre}, ${direccion}, Santiago, Chile`);
 
   return (
-    <div className="w-full h-40 rounded-2xl overflow-hidden shadow-md bg-slate-900 mt-3 border border-slate-700/60 flex flex-col items-center justify-center p-4 text-center">
-      <div className="mb-2">
-        <span className="text-xl">🗺️</span>
-        <h4 className="text-xs font-bold text-white mt-1">Ubicación exacta en el mapa</h4>
-        <p className="text-[11px] text-slate-400 mt-0.5">{direccion}, Santiago</p>
+    <div className="w-full h-28 rounded-2xl overflow-hidden shadow-md bg-slate-900 mt-2 border border-slate-700/60 flex flex-col items-center justify-center p-3 text-center">
+      <div className="mb-1">
+        <span className="text-base">🗺️</span>
+        <span className="text-[11px] font-bold text-white ml-1.5">Ubicación exacta</span>
       </div>
       <a 
         href={`https://www.google.com/maps/search/?api=1&query=${textoBusqueda}`} 
         target="_blank" 
         rel="noopener noreferrer"
-        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-1.5"
+        className="bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl transition shadow-md flex items-center gap-1"
       >
-        📍 Ver fachada y mapa en Google Maps
+        📍 Abrir en Google Maps
       </a>
     </div>
   );
@@ -94,11 +90,12 @@ export default function App() {
   const [favoritos, setFavoritos] = useState([]);
   const [likesUsuario, setLikesUsuario] = useState([]);
 
-  // Modales y Sidebar
+  // Sidebar y Perfil
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
-  const [vistaSidebar, setVistaSidebar] = useState('perfil'); // 'perfil', 'mis-resenas', 'favoritos'
+  const [vistaSidebar, setVistaSidebar] = useState('perfil');
   const [nombreUsuario, setNombreUsuario] = useState('');
 
+  // Modales
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
   const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false);
@@ -107,6 +104,9 @@ export default function App() {
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState('login');
   const [enviando, setEnviando] = useState(false);
+
+  // Interruptor para datos opcionales de arriendo/gastos comunes
+  const [incluirDatosEconomicos, setIncluirDatosEconomicos] = useState(false);
 
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
 
@@ -118,7 +118,6 @@ export default function App() {
   };
 
   const [listaAlertas, setListaAlertas] = useState([]);
-
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -217,7 +216,6 @@ export default function App() {
     cargarResenas();
   }, [edificioSeleccionado]);
 
-  // Sistema de Likes Toggle (Dar o Quitar Like)
   const handleDarUtil = async (resenaId, actualCount) => {
     const yaVotado = likesUsuario.includes(resenaId);
     const nuevoCount = yaVotado ? Math.max(0, (Number(actualCount) || 1) - 1) : (Number(actualCount) || 0) + 1;
@@ -244,7 +242,6 @@ export default function App() {
     }
   };
 
-  // Eliminar Reseña Propia
   const handleEliminarResena = async (resenaId) => {
     if (!confirm('¿Estás seguro de que deseas eliminar esta opinión?')) return;
 
@@ -333,7 +330,7 @@ export default function App() {
     mostrarAviso('Has cerrado sesión correctamente.');
   };
 
-  // Guardar Reseña corregido y blindado sin errores de esquema
+  // Guardar Reseña con campos opcionales controlados y sin errores
   const handleGuardarResena = async (e) => {
     e.preventDefault();
     if (!edificioSeleccionado || !session) return;
@@ -351,7 +348,7 @@ export default function App() {
       }
     }
 
-    const { error } = await supabase.from('resenas').insert([{
+    const objetoResena = {
       edificio_id: edificioSeleccionado.id,
       titulo: nuevaResena.titulo,
       comentario: nuevaResena.comentario,
@@ -359,23 +356,34 @@ export default function App() {
       nota_administracion: parseInt(nuevaResena.nota_administracion),
       nota_gastos_comunes: parseInt(nuevaResena.nota_gastos_comunes),
       nota_seguridad: parseInt(nuevaResena.nota_seguridad),
-      gasto_comun: nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null,
-      arriendo: nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null,
-      habitaciones: nuevaResena.habitaciones ? String(nuevaResena.habitaciones) : '1',
       etiqueta: nuevaResena.etiqueta,
       url_imagen: fotoUrl,
       usuario_email: session.user.email
-    }]);
+    };
+
+    if (incluirDatosEconomicos) {
+      objetoResena.habitaciones = nuevaResena.habitaciones ? String(nuevaResena.habitaciones) : '1';
+      objetoResena.gasto_comun = nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null;
+      objetoResena.arriendo = nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null;
+    } else {
+      objetoResena.habitaciones = null;
+      objetoResena.gasto_comun = null;
+      objetoResena.arriendo = null;
+    }
+
+    const { error } = await supabase.from('resenas').insert([objetoResena]);
 
     if (!error) {
       setModalResenaAbierto(false);
       setArchivoFoto(null);
+      setIncluirDatosEconomicos(false);
       setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: 'Excelente conectividad al metro' });
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
       mostrarAviso('¡Tu opinión ha sido publicada con éxito!');
     } else { 
+      console.error(error);
       mostrarAviso('Error al guardar la reseña.', 'error'); 
     }
     setEnviando(false);
@@ -571,7 +579,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* MENÚ LATERAL (SIDEBAR DE USUARIO) */}
+      {/* MENÚ LATERAL (SIDEBAR) */}
       {sidebarAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[99999] flex justify-start animate-fadeIn">
           <div className="bg-slate-900 border-r border-slate-800 w-80 h-full p-6 shadow-2xl flex flex-col justify-between relative text-white">
@@ -593,19 +601,12 @@ export default function App() {
                 </div>
               </div>
 
-              {/* TABS DEL SIDEBAR */}
               <div className="space-y-1.5 mb-6">
                 <button 
                   onClick={() => setVistaSidebar('perfil')}
                   className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${vistaSidebar === 'perfil' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
                 >
                   <Settings className="w-4 h-4" /> Mi Perfil
-                </button>
-                <button 
-                  onClick={() => setVistaSidebar('mis-resenas')}
-                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${vistaSidebar === 'mis-resenas' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
-                >
-                  <Star className="w-4 h-4" /> Mis Opiniones Publicadas
                 </button>
                 <button 
                   onClick={() => setVistaSidebar('favoritos')}
@@ -615,7 +616,6 @@ export default function App() {
                 </button>
               </div>
 
-              {/* CONTENIDO SEGÚN LA PESTAÑA */}
               <div className="max-h-[42vh] overflow-y-auto pr-1 space-y-3">
                 {vistaSidebar === 'perfil' && (
                   <div className="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 space-y-3 text-xs">
@@ -635,19 +635,6 @@ export default function App() {
                     >
                       Guardar Cambios
                     </button>
-                  </div>
-                )}
-
-                {vistaSidebar === 'mis-resenas' && (
-                  <div className="space-y-2.5">
-                    <h4 className="font-bold text-xs text-slate-400 uppercase tracking-wider mb-2">Tus opiniones</h4>
-                    {/* Filtramos las reseñas del usuario logueado */}
-                    {(() => {
-                      const misResenas = edificios.flatMap(e => []).length; // Carga dinámica rápida
-                      return (
-                        <p className="text-[11px] text-slate-500 italic">Aquí verás y podrás administrar todas las reseñas que has publicado en los edificios de Santiago.</p>
-                      );
-                    })()}
                   </div>
                 )}
 
@@ -758,12 +745,12 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* TARJETA INFERIOR DESLIZANTE */}
+      {/* TARJETA INFERIOR REORGANIZADA (BOTONES PRINCIPALES ARRIBA) */}
       {edificioSeleccionado && (
         <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-30 transition-all duration-300 ease-out transform translate-y-0 opacity-100">
-          <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-700/85 rounded-3xl p-5 shadow-2xl relative max-h-[75vh] overflow-y-auto">
+          <div className="bg-slate-900/95 backdrop-blur-2xl border border-slate-700/85 rounded-3xl p-4 shadow-2xl relative max-h-[78vh] overflow-y-auto">
             
-            <div className="absolute top-4 right-4 flex items-center gap-2">
+            <div className="absolute top-3 right-3 flex items-center gap-2">
               <button 
                 onClick={(e) => toggleFavorito(edificioSeleccionado.id, e)}
                 className={`p-2 rounded-full transition ${favoritos.includes(edificioSeleccionado.id) ? 'bg-rose-500/20 text-rose-500' : 'bg-slate-800/80 text-slate-400 hover:text-white'}`}
@@ -778,14 +765,33 @@ export default function App() {
               </button>
             </div>
 
-            <span className="text-[10px] font-semibold px-2.5 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg">
+            <span className="text-[10px] font-semibold px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-lg">
               {edificioSeleccionado.comuna}
             </span>
 
-            <h2 className="text-lg font-bold text-white mt-2">{edificioSeleccionado.nombre}</h2>
-            <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5 mb-3">
+            <h2 className="text-base font-bold text-white mt-1.5">{edificioSeleccionado.nombre}</h2>
+            <p className="text-[11px] text-slate-400 flex items-center gap-1 mb-3">
               <MapPin className="w-3.5 h-3.5 text-indigo-400" /> {edificioSeleccionado.direccion}
             </p>
+
+            {/* BOTONES PRINCIPALES ARRIBA DE TODO */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button 
+                onClick={() => {
+                  if (!session) { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }
+                  else { setModalResenaAbierto(true); }
+                }}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-2.5 rounded-xl font-semibold text-xs transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Dejar Opinión
+              </button>
+              <button 
+                onClick={() => mostrarAviso('Próximamente: Conexión directa con corredores y arriendos disponibles.')}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 px-2.5 rounded-xl font-semibold text-xs transition border border-slate-700 flex items-center justify-center gap-1"
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Cotizar Arriendo
+              </button>
+            </div>
 
             {/* FOTO DE PORTADA */}
             {(() => {
@@ -799,16 +805,16 @@ export default function App() {
               const fotoFinal = fotoResena || fotosPorComuna[edificioSeleccionado.comuna] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80';
 
               return (
-                <div className="w-full h-40 rounded-2xl overflow-hidden border border-slate-700/60 shadow-lg mb-3 relative group">
+                <div className="w-full h-32 rounded-2xl overflow-hidden border border-slate-700/60 shadow-md mb-2.5 relative group">
                   <img 
                     src={fotoFinal} 
                     alt="Edificio" 
                     className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition duration-300" 
                     onClick={() => window.open(fotoFinal, '_blank')}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end justify-between p-2.5 pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end justify-between p-2 pointer-events-none">
                     <span className="text-[10px] text-white font-medium bg-slate-900/80 px-2 py-0.5 rounded-md backdrop-blur-md">
-                      {fotoResena ? '📷 Foto de la comunidad' : '🏙️ Vista referencial'}
+                      {fotoResena ? '📷 Foto comunitaria' : '🏙️ Vista referencial'}
                     </span>
                   </div>
                   <button 
@@ -816,9 +822,9 @@ export default function App() {
                       if (!session) { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }
                       else { setModalFotoAbierto(true); }
                     }}
-                    className="absolute top-2 left-2 bg-slate-900/80 hover:bg-indigo-600 text-white p-2 rounded-xl backdrop-blur-md transition shadow-md flex items-center gap-1 text-[10px] font-semibold"
+                    className="absolute top-2 left-2 bg-slate-900/80 hover:bg-indigo-600 text-white p-1.5 rounded-xl backdrop-blur-md transition shadow-md flex items-center gap-1 text-[10px] font-semibold"
                   >
-                    <Camera className="w-3.5 h-3.5" /> Agregar Foto
+                    <Camera className="w-3 h-3" /> Foto
                   </button>
                 </div>
               );
@@ -830,29 +836,29 @@ export default function App() {
             />
 
             {/* PROMEDIOS Y GASTOS */}
-            <div className="space-y-2 my-3">
-              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="space-y-2 my-2.5">
+              <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
                   <span className="text-xs text-slate-300">Gasto Común Promedio</span>
                 </div>
                 <span className="text-xs font-bold text-white">{promedioGasto}</span>
               </div>
 
-              <div className="bg-slate-800/50 border border-slate-700/50 p-2.5 rounded-2xl">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Home className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <div className="bg-slate-800/50 border border-slate-700/50 p-2 rounded-2xl">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Home className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                   <span className="text-xs text-slate-300 font-semibold">Arriendo Promedio por Tipología</span>
                 </div>
                 
                 {Object.keys(promediosArriendoPorHab).length === 0 ? (
                   <p className="text-[11px] text-slate-500 italic">Sin datos de arriendo registrados aún.</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  <div className="grid grid-cols-3 gap-1 pt-0.5">
                     {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
-                      <div key={hab} className="bg-slate-900/80 p-1.5 rounded-xl text-center border border-slate-800">
+                      <div key={hab} className="bg-slate-900/80 p-1 rounded-xl text-center border border-slate-800">
                         <div className="text-[10px] text-indigo-400 font-bold">{hab} Dorm.</div>
-                        <div className="text-xs font-semibold text-white">{monto}</div>
+                        <div className="text-[11px] font-semibold text-white">{monto}</div>
                       </div>
                     ))}
                   </div>
@@ -860,7 +866,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between bg-slate-800/30 border border-slate-700/40 px-3 py-2 rounded-2xl mb-3 text-xs text-slate-300">
+            <div className="flex items-center justify-between bg-slate-800/30 border border-slate-700/40 px-3 py-1.5 rounded-2xl mb-2.5 text-xs text-slate-300">
               <span className="flex items-center gap-1 text-amber-400 font-bold">
                 <Star className="w-3.5 h-3.5 fill-amber-400" /> {edificioSeleccionado.calificacion_promedio || 'N/A'}
               </span>
@@ -869,34 +875,16 @@ export default function App() {
 
             <button 
               onClick={() => setModalAlertaAbierto(true)}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 py-2.5 px-3 rounded-xl font-semibold text-xs transition mb-4 flex items-center justify-center gap-1.5 shadow-lg"
+              className="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 py-2 px-3 rounded-xl font-semibold text-xs transition mb-3 flex items-center justify-center gap-1.5 shadow"
             >
               <Bell className="w-3.5 h-3.5" /> 🔔 Avisarme cuando haya arriendos aquí
             </button>
 
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <button 
-                onClick={() => {
-                  if (!session) { setModoAuth('login'); setRegistroExitosoMsg(false); setModalAuthAbierto(true); }
-                  else { setModalResenaAbierto(true); }
-                }}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-3 rounded-xl font-semibold text-xs transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" /> Dejar Opinión
-              </button>
-              <button 
-                onClick={() => mostrarAviso('Próximamente: Conexión directa con corredores y arriendos disponibles.')}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 px-3 rounded-xl font-semibold text-xs transition border border-slate-700 flex items-center justify-center gap-1.5"
-              >
-                <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Cotizar Arriendo
-              </button>
-            </div>
-
             <GaleriaFotosEdificio resenas={resenas} />
 
-            {/* SECCIÓN DE OPINIONES CON LIKES TOGGLE Y BOTÓN DE BORRAR SI ES TUYA */}
-            <div className="space-y-3 pt-3 border-t border-slate-800">
-              <h3 className="font-semibold text-xs text-slate-400 uppercase tracking-wider">Últimas Opiniones (Más útiles primero)</h3>
+            {/* SECCIÓN DE OPINIONES */}
+            <div className="space-y-2.5 pt-2.5 border-t border-slate-800">
+              <h3 className="font-semibold text-[11px] text-slate-400 uppercase tracking-wider">Últimas Opiniones</h3>
 
               {cargandoResenas ? (
                 <p className="text-xs text-slate-500 text-center py-3">Cargando...</p>
@@ -908,14 +896,14 @@ export default function App() {
                   const esMia = session?.user?.email === r.usuario_email;
 
                   return (
-                    <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2 text-xs">
+                    <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-1.5 text-xs">
                       <div className="flex justify-between items-start">
                         <h4 className="font-semibold text-white">{r.titulo}</h4>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           {esMia && (
                             <button 
                               onClick={() => handleEliminarResena(r.id)}
-                              className="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 rounded-xl transition"
+                              className="p-1 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 rounded-lg transition"
                               title="Eliminar mi opinión"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -923,8 +911,7 @@ export default function App() {
                           )}
                           <button 
                             onClick={() => handleDarUtil(r.id, r.util_count)}
-                            className={`flex items-center gap-1 border px-2.5 py-1 rounded-xl transition text-[10px] font-semibold ${yaVotado ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 border-slate-800'}`}
-                            title={yaVotado ? "Quitar me gusta" : "Marcar como útil"}
+                            className={`flex items-center gap-1 border px-2 py-0.5 rounded-xl transition text-[10px] font-semibold ${yaVotado ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-900 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 border-slate-800'}`}
                           >
                             <ThumbsUp className={`w-3 h-3 ${yaVotado ? 'text-white fill-white' : 'text-indigo-400'}`} /> 
                             <span>{r.util_count || 0}</span>
@@ -939,25 +926,21 @@ export default function App() {
                         </span>
                       )}
 
-                      <div className="flex flex-wrap gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
-                        {r.habitaciones && (
-                          <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>
-                        )}
-                        {r.gasto_comun && (
-                          <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>
-                        )}
-                        {r.arriendo && (
-                          <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>
-                        )}
-                      </div>
+                      {(r.habitaciones || r.gasto_comun || r.arriendo) && (
+                        <div className="flex flex-wrap gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 text-[11px]">
+                          {r.habitaciones && <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>}
+                          {r.gasto_comun && <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>}
+                          {r.arriendo && <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>}
+                        </div>
+                      )}
                       
                       {r.url_imagen && (
-                        <div className="rounded-xl overflow-hidden border border-slate-800 mt-2 max-h-36">
+                        <div className="rounded-xl overflow-hidden border border-slate-800 mt-1 max-h-32">
                           <img src={r.url_imagen} alt="Evidencia" className="w-full h-full object-cover" />
                         </div>
                       )}
 
-                      <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1">
+                      <div className="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
                         <span>👤 {r.usuario_email ? r.usuario_email.split('@')[0] : 'Vecino'}</span>
                         <div className="flex gap-2">
                           <span>🔊 {r.nota_ruido}/5</span>
@@ -1087,21 +1070,17 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL NUEVA OPINIÓN */}
+      {/* MODAL NUEVA OPINIÓN CON INTERRUPTOR OPCIONAL PARA DATOS ECONÓMICOS */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto text-white">
             <button onClick={() => setModalResenaAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1"><X className="w-5 h-5" /></button>
             <h3 className="text-lg font-bold mb-1">Publicar Opinión</h3>
-            <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs mt-2">
+            <p className="text-xs text-slate-400 mb-3">{edificioSeleccionado?.nombre}</p>
+
+            <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs">
               <input type="text" required placeholder="Título (Ej: Excelente ubicación)" value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
-              <div className="grid grid-cols-3 gap-2">
-                <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="p-2 bg-slate-950 border border-slate-800 rounded-xl">
-                  <option value="1">1 Dorm</option><option value="2">2 Dorm</option><option value="3">3 Dorm</option><option value="4">4+ Dorm</option>
-                </select>
-                <input type="number" placeholder="Gasto Común ($)" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="p-2 bg-slate-950 border border-slate-800 rounded-xl" />
-                <input type="number" placeholder="Arriendo ($)" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="p-2 bg-slate-950 border border-slate-800 rounded-xl" />
-              </div>
+              
               <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl">
                 <option value="Excelente conectividad al metro">🚇 Excelente conectividad al metro</option>
                 <option value="Ascensores rápidos y bien mantenidos">🛗 Ascensores rápidos</option>
@@ -1109,9 +1088,49 @@ export default function App() {
                 <option value="Problemas frecuentes con ruidos">🔊 Problemas con ruidos</option>
                 <option value="Gastos comunes elevados">💰 Gastos comunes elevados</option>
               </select>
-              <textarea required rows="3" placeholder="Comentario detallado..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
-              <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:bg-indigo-600/20 file:text-indigo-400" />
-              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl shadow-lg mt-2">{enviando ? 'Guardando...' : 'Publicar Opinión'}</button>
+
+              <textarea required rows="3" placeholder="Comentario detallado sobre tu experiencia..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl outline-none" />
+
+              {/* BOTÓN / INTERRUPTOR PARA ACTIVAR DATOS ECONÓMICOS OPCIONALES */}
+              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-3">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="font-semibold text-slate-300">📊 ¿Agregar datos de arriendo o gastos comunes? (Opcional)</span>
+                  <input 
+                    type="checkbox" 
+                    checked={incluirDatosEconomicos} 
+                    onChange={(e) => setIncluirDatosEconomicos(e.target.checked)}
+                    className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                  />
+                </label>
+
+                {incluirDatosEconomicos && (
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/80">
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Dormitorios</label>
+                      <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl">
+                        <option value="1">1 Dorm</option><option value="2">2 Dorm</option><option value="3">3 Dorm</option><option value="4">4+ Dorm</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Gasto Común ($)</label>
+                      <input type="number" placeholder="Ej: 90000" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1">Arriendo ($)</label>
+                      <input type="number" placeholder="Ej: 450000" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="w-full p-2 bg-slate-900 border border-slate-800 rounded-xl" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-slate-300 mb-1">Foto o comprobante (Opcional)</label>
+                <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:bg-indigo-600/20 file:text-indigo-400" />
+              </div>
+
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg mt-2 transition">
+                {enviando ? 'Guardando...' : 'Publicar Opinión'}
+              </button>
             </form>
           </div>
         </div>
