@@ -57,22 +57,25 @@ function GaleriaFotosEdificio({ resenas }) {
   );
 }
 
-// Componente para mostrar el mapa automático de Google sin errores
 const VistaMapaEdificio = ({ direccion, nombre }) => {
-  const queryConsulta = encodeURIComponent(`${nombre}, ${direccion}, Santiago, Chile`);
-  const urlGoogleMaps = `https://maps.google.com/maps?q=${queryConsulta}&output=embed`;
+  const textoBusqueda = encodeURIComponent(`${nombre}, ${direccion}, Santiago, Chile`);
+  const urlMapaLimpio = `https://www.openstreetmap.org/search?query=${textoBusqueda}#map=16/-33.4489/-70.6693`;
 
   return (
-    <div className="w-full h-64 rounded-xl overflow-hidden shadow-md bg-gray-100 mt-3">
-      <iframe
-        title={`Mapa de ${nombre}`}
-        width="100%"
-        height="100%"
-        style={{ border: 0 }}
-        loading="lazy"
-        allowFullScreen
-        src={urlGoogleMaps}
-      ></iframe>
+    <div className="w-full h-64 rounded-xl overflow-hidden shadow-md bg-slate-900 mt-3 border border-slate-700/60 flex flex-col items-center justify-center p-4 text-center">
+      <div className="mb-3">
+        <span className="text-2xl">🗺️</span>
+        <h4 className="text-xs font-bold text-white mt-1">Ubicación exacta en el mapa</h4>
+        <p className="text-[11px] text-slate-400 mt-0.5">{direccion}, Santiago</p>
+      </div>
+      <a 
+        href={`https://www.google.com/maps/search/?api=1&query=${textoBusqueda}`} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-1.5"
+      >
+        📍 Ver fachada y mapa en Google Maps
+      </a>
     </div>
   );
 };
