@@ -352,23 +352,21 @@ export default function App() {
       edificio_id: edificioSeleccionado.id,
       titulo: nuevaResena.titulo,
       comentario: nuevaResena.comentario,
-      nota_ruido: parseInt(nuevaResena.nota_ruido),
-      nota_administracion: parseInt(nuevaResena.nota_administracion),
-      nota_gastos_comunes: parseInt(nuevaResena.nota_gastos_comunes),
-      nota_seguridad: parseInt(nuevaResena.nota_seguridad),
+      nota_ruido: parseInt(nuevaResena.nota_ruido) || 3,
+      nota_administracion: parseInt(nuevaResena.nota_administracion) || 3,
+      nota_gastos_comunes: parseInt(nuevaResena.nota_gastos_comunes) || 3,
+      nota_seguridad: parseInt(nuevaResena.nota_seguridad) || 3,
       etiqueta: nuevaResena.etiqueta,
       url_imagen: fotoUrl,
-      usuario_email: session.user.email
+      usuario_email: session.user.email,
+      util_count: 0 // Blindaje: siempre inicia en cero
     };
 
     if (incluirDatosEconomicos) {
-      objetoResena.habitaciones = nuevaResena.habitaciones ? String(nuevaResena.habitaciones) : '1';
+      // Usamos parseInt para asegurar que sea un número y no haya rechazo de base de datos
+      objetoResena.habitaciones = nuevaResena.habitaciones ? parseInt(nuevaResena.habitaciones) : 1;
       objetoResena.gasto_comun = nuevaResena.gasto_comun ? parseFloat(nuevaResena.gasto_comun) : null;
       objetoResena.arriendo = nuevaResena.arriendo ? parseFloat(nuevaResena.arriendo) : null;
-    } else {
-      objetoResena.habitaciones = null;
-      objetoResena.gasto_comun = null;
-      objetoResena.arriendo = null;
     }
 
     const { error } = await supabase.from('resenas').insert([objetoResena]);
@@ -384,7 +382,8 @@ export default function App() {
       mostrarAviso('¡Tu opinión ha sido publicada con éxito!');
     } else { 
       console.error(error);
-      mostrarAviso('Error al guardar la reseña.', 'error'); 
+      // 🔥 Ahora el globo rojo te mostrará el error EXACTO que dispara la base de datos
+      mostrarAviso(`Info Supabase: ${error.message || error.details}`, 'error'); 
     }
     setEnviando(false);
   };
