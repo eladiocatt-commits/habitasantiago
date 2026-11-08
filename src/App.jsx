@@ -92,6 +92,7 @@ export default function App() {
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
   const [favoritos, setFavoritos] = useState([]);
+  const [likesUsuario, setLikesUsuario] = useState([]);
 
   const [modalResenaAbierto, setModalResenaAbierto] = useState(false);
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
@@ -151,6 +152,9 @@ export default function App() {
     const favsGuardados = JSON.parse(localStorage.getItem('habitasantiago_favs') || '[]');
     setFavoritos(favsGuardados);
 
+    const likesGuardados = JSON.parse(localStorage.getItem('habitasantiago_likes') || '[]');
+    setLikesUsuario(likesGuardados);
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -193,7 +197,7 @@ export default function App() {
         .from('resenas')
         .select('*')
         .eq('edificio_id', edificioSeleccionado.id)
-        .order('util_count', { ascending: false }); // Ordenadas por las más útiles primero
+        .order('creado_en', { ascending: false });
 
       if (!error) setResenas(data || []);
       setCargandoResenas(false);
@@ -202,9 +206,14 @@ export default function App() {
     cargarResenas();
   }, [edificioSeleccionado]);
 
-  // Función para dar "Me gusta" o marcar como útil una reseña
+  // Manejo blindado de likes (1 solo voto y persistente)
   const handleDarUtil = async (resenaId, actualCount) => {
-    const nuevoCount = (actualCount || 0) + 1;
+    if (likesUsuario.includes(resenaId)) {
+      mostrarAviso('Ya votaste esta reseña anteriormente.', 'error');
+      return;
+    }
+
+    const nuevoCount = (Number(actualCount) || 0) + 1;
     const { error } = await supabase
       .from('resenas')
       .update({ util_count: nuevoCount })
@@ -212,6 +221,9 @@ export default function App() {
 
     if (!error) {
       setResenas(resenas.map(r => r.id === resenaId ? { ...r, util_count: nuevoCount } : r));
+      const nuevosLikes = [...likesUsuario, resenaId];
+      setLikesUsuario(nuevosLikes);
+      localStorage.setItem('habitasantiago_likes', JSON.stringify(nuevosLikes));
       mostrarAviso('¡Gracias! Reseña marcada como útil.');
     } else {
       mostrarAviso('Error al registrar voto.', 'error');
@@ -305,6 +317,7 @@ export default function App() {
       }
     }
 
+    // Objeto limpio sin campos conflictivos para evitar errores en Supabase
     const { error } = await supabase.from('resenas').insert([{
       edificio_id: edificioSeleccionado.id,
       titulo: nuevaResena.titulo,
@@ -318,14 +331,14 @@ export default function App() {
       habitaciones: nuevaResena.habitaciones ? String(nuevaResena.habitaciones) : '1',
       etiqueta: nuevaResena.etiqueta,
       url_imagen: fotoUrl,
-      usuario_email: session.user.email,
+      usuario_email: session.user.email
     }]);
 
     if (!error) {
       setModalResenaAbierto(false);
       setArchivoFoto(null);
       setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: 'Excelente conectividad al metro' });
-      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('util_count', { ascending: false });
+      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
       mostrarAviso('¡Tu opinión ha sido publicada con éxito!');
@@ -387,7 +400,7 @@ export default function App() {
     if (!error) {
       setModalFotoAbierto(false);
       setArchivoFotoRapida(null);
-      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('util_count', { ascending: false });
+      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
       setResenas(res.data || []);
       cargarEdificios();
       mostrarAviso('¡Foto de portada actualizada con éxito!');
@@ -723,7 +736,7 @@ export default function App() {
 
             <GaleriaFotosEdificio resenas={resenas} />
 
-            {/* SECCIÓN DE OPINIONES CON BOTÓN DE ÚTIL (ME GUSTA) */}
+            {/* SECCIÓN DE OPINIONES CON LIKES BLINDADOS */}
             <div className="space-y-3 pt-3 border-t border-slate-800">
               <h3 className="font-semibold text-xs text-slate-400 uppercase tracking-wider">Últimas Opiniones (Más útiles primero)</h3>
 
@@ -732,55 +745,59 @@ export default function App() {
               ) : resenas.length === 0 ? (
                 <p className="text-xs text-slate-500 text-center py-3">Sé el primero en opinar sobre este edificio.</p>
               ) : (
-                resenas.map((r) => (
-                  <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-semibold text-white">{r.titulo}</h4>
-                      {/* BOTÓN DE ÚTIL / ME GUSTA */}
-                      <button 
-                        onClick={() => handleDarUtil(r.id, r.util_count)}
-                        className="flex items-center gap-1 bg-slate-900 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 border border-slate-800 px-2 py-1 rounded-xl transition text-[10px] font-semibold"
-                        title="Marcar como útil"
-                      >
-                        <ThumbsUp className="w-3 h-3 text-indigo-400" /> 
-                        <span>{r.util_count || 0}</span>
-                      </button>
-                    </div>
-                    <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
+                resenas.map((r) => {
+                  const yaVotado = likesUsuario.includes(r.id);
 
-                    {r.etiqueta && (
-                      <span className="inline-block bg-indigo-500/15 text-indigo-300 text-[10px] font-semibold px-2 py-0.5 rounded-lg border border-indigo-500/30">
-                        🏷️ {r.etiqueta}
-                      </span>
-                    )}
-
-                    <div className="flex flex-wrap gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
-                      {r.habitaciones && (
-                        <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>
-                      )}
-                      {r.gasto_comun && (
-                        <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>
-                      )}
-                      {r.arriendo && (
-                        <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>
-                      )}
-                    </div>
-                    
-                    {r.url_imagen && (
-                      <div className="rounded-xl overflow-hidden border border-slate-800 mt-2 max-h-36">
-                        <img src={r.url_imagen} alt="Evidencia" className="w-full h-full object-cover" />
+                  return (
+                    <div key={r.id} className="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2 text-xs">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-semibold text-white">{r.titulo}</h4>
+                        <button 
+                          onClick={() => handleDarUtil(r.id, r.util_count)}
+                          disabled={yaVotado}
+                          className={`flex items-center gap-1 border px-2.5 py-1 rounded-xl transition text-[10px] font-semibold ${yaVotado ? 'bg-indigo-600/20 text-indigo-400 border-indigo-500/40 cursor-not-allowed opacity-90' : 'bg-slate-900 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-400 border-slate-800'}`}
+                          title={yaVotado ? "Ya votaste esta reseña" : "Marcar como útil"}
+                        >
+                          <ThumbsUp className={`w-3 h-3 ${yaVotado ? 'text-indigo-400 fill-indigo-400' : 'text-indigo-400'}`} /> 
+                          <span>{r.util_count || 0}</span>
+                        </button>
                       </div>
-                    )}
+                      <p className="text-slate-300 leading-relaxed">{r.comentario}</p>
 
-                    <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1">
-                      <span>👤 {r.usuario_email ? r.usuario_email.split('@')[0] : 'Vecino'}</span>
-                      <div className="flex gap-2">
-                        <span>🔊 {r.nota_ruido}/5</span>
-                        <span>🛡️ {r.nota_seguridad}/5</span>
+                      {r.etiqueta && (
+                        <span className="inline-block bg-indigo-500/15 text-indigo-300 text-[10px] font-semibold px-2 py-0.5 rounded-lg border border-indigo-500/30">
+                          🏷️ {r.etiqueta}
+                        </span>
+                      )}
+
+                      <div className="flex flex-wrap gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-[11px]">
+                        {r.habitaciones && (
+                          <span className="text-indigo-400">🛏️ <b>{r.habitaciones} Dorm.</b></span>
+                        )}
+                        {r.gasto_comun && (
+                          <span className="text-amber-400">GC: <b>${Number(r.gasto_comun).toLocaleString('es-CL')}</b></span>
+                        )}
+                        {r.arriendo && (
+                          <span className="text-emerald-400">Arriendo: <b>${Number(r.arriendo).toLocaleString('es-CL')}</b></span>
+                        )}
+                      </div>
+                      
+                      {r.url_imagen && (
+                        <div className="rounded-xl overflow-hidden border border-slate-800 mt-2 max-h-36">
+                          <img src={r.url_imagen} alt="Evidencia" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-[10px] text-slate-500 pt-1">
+                        <span>👤 {r.usuario_email ? r.usuario_email.split('@')[0] : 'Vecino'}</span>
+                        <div className="flex gap-2">
+                          <span>🔊 {r.nota_ruido}/5</span>
+                          <span>🛡️ {r.nota_seguridad}/5</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
