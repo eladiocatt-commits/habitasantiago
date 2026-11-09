@@ -1,16 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, PlusCircle, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, User, Trash2, Bookmark, Settings, KeyRound, ChevronRight, MessageSquare
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare
 } from 'lucide-react';
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+// Pin moderno con CSS y Gradientes (Reemplaza al feo por defecto)
+const modernIcon = L.divIcon({
+  className: 'custom-modern-marker',
+  html: `
+    <div style="
+      width: 28px; height: 28px; 
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); 
+      border: 2px solid #ffffff; 
+      border-radius: 50% 50% 50% 0; 
+      transform: rotate(-45deg); 
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.6);
+      display: flex; align-items: center; justify-content: center;
+    ">
+      <div style="width: 8px; height: 8px; background: white; border-radius: 50%; transform: rotate(45deg);"></div>
+    </div>
+  `,
+  iconSize: [28, 28],
+  iconAnchor: [14, 28],
+  popupAnchor: [0, -32]
 });
 
 function MapResizer({ edificioSeleccionado }) {
@@ -18,8 +32,6 @@ function MapResizer({ edificioSeleccionado }) {
   useEffect(() => {
     if (!map) return;
     const timer = setTimeout(() => { map.invalidateSize(true); }, 300);
-    
-    // Si se selecciona un edificio, centrar el mapa ligeramente a la izquierda en desktop
     if (edificioSeleccionado && window.innerWidth > 768) {
       map.setView([parseFloat(edificioSeleccionado.latitud), parseFloat(edificioSeleccionado.longitud)], 15, { animate: true });
     }
@@ -28,7 +40,6 @@ function MapResizer({ edificioSeleccionado }) {
   return null;
 }
 
-// COMPONENTE: PANEL LATERAL DE EDIFICIO (WORLD CLASS)
 const PanelEdificio = ({ 
   edificio, cerrar, resenas, promedios, favoritos, toggleFavorito, 
   abrirModalResena, abrirModalFoto, abrirModalAlerta, 
@@ -53,13 +64,9 @@ const PanelEdificio = ({
 
   return (
     <div className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-[#09090b] border-l border-white/5 shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-right duration-300">
-      
-      {/* HEADER PANORÁMICO (HERO) */}
       <div className="relative h-64 w-full flex-shrink-0 bg-slate-900 group">
         <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent"></div>
-        
-        {/* Controles Flotantes Superiores */}
         <div className="absolute top-5 left-5 right-5 flex justify-between items-center z-10">
           <button onClick={cerrar} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white transition-all">
             <X className="w-5 h-5" />
@@ -70,8 +77,6 @@ const PanelEdificio = ({
             </button>
           </div>
         </div>
-
-        {/* Título y Dirección sobre la imagen */}
         <div className="absolute bottom-5 left-6 right-6 z-10">
           <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white backdrop-blur-md rounded-lg border border-white/10 mb-2 inline-block">
             {edificio.comuna}
@@ -83,10 +88,7 @@ const PanelEdificio = ({
         </div>
       </div>
 
-      {/* CUERPO SCROLLABLE DEL PANEL */}
       <div className="flex-1 overflow-y-auto no-scrollbar p-6">
-        
-        {/* Acciones Principales */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(79,70,229,0.2)] hover:scale-[1.02]">
             <MessageSquare className="w-5 h-5" />
@@ -98,7 +100,6 @@ const PanelEdificio = ({
           </button>
         </div>
 
-        {/* Bento Grid: Datos Financieros */}
         <div className="space-y-4 mb-8">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Información Financiera</h3>
           <div className="grid grid-cols-1 gap-3">
@@ -133,7 +134,6 @@ const PanelEdificio = ({
           </div>
         </div>
 
-        {/* Calificación Global */}
         <div className="flex items-center justify-between bg-white/[0.03] border border-white/5 p-4 rounded-2xl mb-8">
           <div className="flex items-center gap-2">
             <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
@@ -148,7 +148,6 @@ const PanelEdificio = ({
           </div>
         </div>
 
-        {/* Galería Comunitaria Mini */}
         {fotosComunidad.length > 0 && (
           <div className="mb-8">
              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Fotos de Vecinos</h3>
@@ -160,7 +159,6 @@ const PanelEdificio = ({
           </div>
         )}
 
-        {/* Opiniones Detailed List */}
         <div>
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Últimas Reseñas</h3>
           <div className="space-y-4">
@@ -187,7 +185,6 @@ const PanelEdificio = ({
                     )}
                     <p className="text-xs text-slate-300 leading-relaxed mb-3">{r.comentario}</p>
                     
-                    {/* Datos adjuntos en la reseña */}
                     {(r.habitaciones || r.gasto_comun || r.arriendo) && (
                       <div className="flex flex-wrap gap-2 mb-3 bg-black/20 p-2 rounded-xl border border-white/5 text-[10px]">
                         {r.habitaciones && <span className="text-slate-300">🛏️ {r.habitaciones} D.</span>}
@@ -215,8 +212,6 @@ const PanelEdificio = ({
         </div>
 
       </div>
-
-      {/* Footer Fijo del Panel */}
       <div className="p-4 border-t border-white/10 bg-[#09090b]/90 backdrop-blur-xl">
          <button onClick={() => requerirAuth(abrirModalAlerta)} className="w-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-bold py-3.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
            <Bell className="w-4 h-4" /> Recibir alertas de arriendos
@@ -231,6 +226,7 @@ export default function App() {
   const [edificios, setEdificios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [buscadorActivo, setBuscadorActivo] = useState(false);
   const [edificioSeleccionado, setEdificioSeleccionado] = useState(null);
   const [resenas, setResenas] = useState([]);
   
@@ -239,7 +235,6 @@ export default function App() {
   const [favoritos, setFavoritos] = useState([]);
   const [likesUsuario, setLikesUsuario] = useState([]);
 
-  // Modales y Estados UI
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
   const [vistaSidebar, setVistaSidebar] = useState('perfil');
   const [nombreUsuario, setNombreUsuario] = useState('');
@@ -255,7 +250,6 @@ export default function App() {
   const [incluirDatosEconomicos, setIncluirDatosEconomicos] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
 
-  // Formularios
   const [listaAlertas, setListaAlertas] = useState([]);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -353,7 +347,6 @@ export default function App() {
     return { promedioGasto, promediosArriendoPorHab };
   };
 
-  // Auth & Submits (Acortados para limpieza visual, misma lógica)
   const handleAuthSubmit = async (e) => {
     e.preventDefault(); setEnviando(true); setAuthError('');
     if (modoAuth === 'registro') { const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword, options: { emailRedirectTo: window.location.origin } }); if (error) setAuthError(error.message); else setRegistroExitosoMsg(true); } 
@@ -398,12 +391,20 @@ export default function App() {
     setEnviando(false);
   };
 
+  // Filtrado de edificios
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || e.comuna.toLowerCase().includes(busqueda.toLowerCase()) || e.direccion.toLowerCase().includes(busqueda.toLowerCase());
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
     const matchRating = !filtroRating || (e.calificacion_promedio >= 4.0);
     return matchTexto && matchComuna && matchRating;
   });
+
+  const resetearApp = () => {
+    setEdificioSeleccionado(null);
+    setBusqueda('');
+    setFiltroComuna('todas');
+    setFiltroRating(false);
+  };
 
   const esAdmin = session?.user?.email === 'eladiocatt@gmail.com';
 
@@ -423,20 +424,49 @@ export default function App() {
         {/* HEADER FLOTANTE MINIMALISTA */}
         <header className="absolute top-6 left-6 right-6 z-30 flex items-start justify-between gap-4 pointer-events-none">
           
-          {/* Logo y Buscador */}
-          <div className="pointer-events-auto flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full max-w-md">
-             <div className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 hover:border-white/20 transition-all cursor-pointer group" onClick={() => setEdificioSeleccionado(null)}>
+          <div className="pointer-events-auto flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full max-w-lg">
+             {/* Logo Reset Button */}
+             <div onClick={resetearApp} className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 hover:border-white/20 transition-all cursor-pointer group">
                <div className="bg-white text-black p-1.5 rounded-lg shadow-md group-hover:scale-110 transition-transform"><Building className="w-4 h-4" /></div>
                <h1 className="text-sm font-black tracking-tight text-white">HabitaSantiago</h1>
              </div>
 
-             <div className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 px-4 py-3.5 rounded-2xl shadow-2xl flex items-center w-full focus-within:border-indigo-500/50 transition-all">
-               <Search className="w-4 h-4 text-slate-400 mr-3" />
-               <input type="text" placeholder="Buscar comuna o edificio..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="bg-transparent text-xs text-white focus:outline-none w-full font-medium" />
+             {/* Buscador Predictivo */}
+             <div className="relative w-full">
+               <div className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 px-4 py-3.5 rounded-2xl shadow-2xl flex items-center focus-within:border-indigo-500/50 transition-all">
+                 <Search className="w-4 h-4 text-slate-400 mr-3" />
+                 <input 
+                   type="text" 
+                   placeholder="Buscar comuna, edificio..." 
+                   value={busqueda} 
+                   onChange={(e) => setBusqueda(e.target.value)} 
+                   onFocus={() => setBuscadorActivo(true)}
+                   onBlur={() => setTimeout(() => setBuscadorActivo(false), 200)}
+                   className="bg-transparent text-xs text-white focus:outline-none w-full font-medium" 
+                 />
+               </div>
+               
+               {/* Dropdown Resultados */}
+               {busqueda && buscadorActivo && (
+                 <div className="absolute top-full left-0 right-0 mt-2 bg-[#18181b]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50">
+                   {edificiosFiltrados.length > 0 ? (
+                     edificiosFiltrados.slice(0, 5).map(ed => (
+                       <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setBusqueda(''); setBuscadorActivo(false); }} className="px-4 py-3 hover:bg-white/10 cursor-pointer flex items-center justify-between border-b border-white/5 last:border-0 transition-colors">
+                         <div>
+                           <p className="text-xs font-bold text-white">{ed.nombre}</p>
+                           <p className="text-[10px] text-slate-400 mt-0.5">{ed.direccion}</p>
+                         </div>
+                         <span className="text-[9px] bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-lg font-bold uppercase tracking-widest">{ed.comuna}</span>
+                       </div>
+                     ))
+                   ) : (
+                     <div className="px-4 py-3 text-xs text-slate-400 italic">No se encontraron edificios.</div>
+                   )}
+                 </div>
+               )}
              </div>
           </div>
 
-          {/* Menú de Usuario */}
           <div className="pointer-events-auto flex items-center gap-2">
             <button onClick={() => { if(!session){setModoAuth('login'); setModalAuthAbierto(true);} else {setModalEdificioAbierto(true);} }} className="hidden sm:flex bg-white hover:bg-slate-200 text-black text-xs font-bold px-4 py-3 rounded-2xl items-center gap-2 transition-all shadow-lg hover:scale-105">
               <Plus className="w-4 h-4" /> Nuevo Edificio
@@ -461,25 +491,29 @@ export default function App() {
         </div>
 
         {/* MAPA */}
-<MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
+        <MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
+          {/* ESTILOS CSS INYECTADOS PARA FORZAR DARK MODE EN POPUPS Y MAPA */}
           <style>{`
-            .leaflet-tile-pane {
-              filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+            .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+            .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+              background-color: #18181b !important;
+              color: #f8fafc !important;
+              border: 1px solid rgba(255,255,255,0.1) !important;
+              box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
             }
+            .leaflet-container a.leaflet-popup-close-button { color: #94a3b8 !important; }
+            .leaflet-popup-content { margin: 12px !important; }
           `}</style>
-          <MapResizer edificioSeleccionado={edificioSeleccionado} />
           
-          <TileLayer 
-            attribution='&copy; OpenStreetMap' 
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-          />
+          <MapResizer edificioSeleccionado={edificioSeleccionado} />
+          <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
           {edificiosFiltrados.map((edificio) => (
-            <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }}>
-              <Popup className="premium-popup">
-                <div className="p-1">
-                  <h4 className="font-bold text-sm text-slate-900">{edificio.nombre}</h4>
-                  <div className="text-[11px] text-amber-600 font-bold mt-1">★ {edificio.calificacion_promedio || 'Sin notas'}</div>
+            <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }}>
+              <Popup>
+                <div>
+                  <h4 className="font-bold text-sm text-white">{edificio.nombre}</h4>
+                  <div className="text-[11px] text-amber-500 font-bold mt-1">★ {edificio.calificacion_promedio || 'Sin notas'}</div>
                 </div>
               </Popup>
             </Marker>
@@ -509,11 +543,11 @@ export default function App() {
          />
       )}
 
-      {/* MENÚ DE USUARIO (DRAWER IZQUIERDO) */}
+      {/* MENÚ DE USUARIO A LA DERECHA */}
       {sidebarAbierto && (
-        <div className="fixed inset-0 z-[99999] flex">
+        <div className="fixed inset-0 z-[99999] flex justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarAbierto(false)}></div>
-          <div className="relative w-full max-w-sm bg-[#09090b] h-full shadow-2xl border-r border-white/5 flex flex-col animate-in slide-in-from-left duration-300">
+          <div className="relative w-full max-w-sm bg-[#09090b] h-full shadow-2xl border-l border-white/5 flex flex-col animate-in slide-in-from-right duration-300">
             <div className="p-6 pb-0 flex justify-between items-center">
               <h2 className="text-lg font-black text-white">Mi Cuenta</h2>
               <button onClick={() => setSidebarAbierto(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
@@ -537,7 +571,6 @@ export default function App() {
                 {esAdmin && <button onClick={cargarAlertasAdmin} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold text-amber-500 hover:bg-amber-500/10 transition-all"><ShieldAlert className="w-4 h-4" /> Admin Leads</button>}
               </div>
 
-              {/* Vistas Dinámicas del Menú */}
               {vistaSidebar === 'perfil' && (
                 <div className="space-y-4">
                   <div>
@@ -579,7 +612,7 @@ export default function App() {
         </div>
       )}
 
-      {/* --- MODALES (Con diseño renovado minimalista tipo iOS/Vercel) --- */}
+      {/* --- MODALES CON FONDOS OSCUROS FIJOS --- */}
       
       {/* MODAL AUTH */}
       {modalAuthAbierto && (
@@ -645,11 +678,11 @@ export default function App() {
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1.5">Etiqueta Principal</label>
                 <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 appearance-none">
-                  <option value="Excelente conectividad al metro">🚇 Excelente conectividad</option>
-                  <option value="Ascensores rápidos y bien mantenidos">🛗 Ascensores rápidos</option>
-                  <option value="Zona muy segura y tranquila">🛡️ Zona segura</option>
-                  <option value="Problemas frecuentes con ruidos">🔊 Problemas con ruidos</option>
-                  <option value="Gastos comunes elevados">💰 Gastos comunes altos</option>
+                  <option value="Excelente conectividad al metro" className="bg-[#18181b] text-white">🚇 Excelente conectividad</option>
+                  <option value="Ascensores rápidos y bien mantenidos" className="bg-[#18181b] text-white">🛗 Ascensores rápidos</option>
+                  <option value="Zona muy segura y tranquila" className="bg-[#18181b] text-white">🛡️ Zona segura</option>
+                  <option value="Problemas frecuentes con ruidos" className="bg-[#18181b] text-white">🔊 Problemas con ruidos</option>
+                  <option value="Gastos comunes elevados" className="bg-[#18181b] text-white">💰 Gastos comunes altos</option>
                 </select>
               </div>
 
@@ -661,14 +694,14 @@ export default function App() {
               <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                 <label className="flex items-center justify-between cursor-pointer">
                   <span className="text-sm font-bold text-white">💰 Agregar datos de costo (Opcional)</span>
-                  <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-4 h-4 rounded" />
+                  <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-4 h-4 rounded accent-indigo-500" />
                 </label>
                 {incluirDatosEconomicos && (
                   <div className="grid grid-cols-3 gap-3 mt-4">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 mb-1">Dormitorios</label>
                       <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-xs text-white">
-                        <option value="1">1 D</option><option value="2">2 D</option><option value="3">3 D</option><option value="4">4+ D</option>
+                        <option value="1" className="bg-[#18181b]">1 D</option><option value="2" className="bg-[#18181b]">2 D</option><option value="3" className="bg-[#18181b]">3 D</option><option value="4" className="bg-[#18181b]">4+ D</option>
                       </select>
                     </div>
                     <div>
@@ -716,7 +749,10 @@ export default function App() {
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1.5">Comuna</label>
                 <select value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 appearance-none">
-                  <option value="Santiago Centro">Santiago Centro</option><option value="Providencia">Providencia</option><option value="Ñuñoa">Ñuñoa</option><option value="Las Condes">Las Condes</option>
+                  <option value="Santiago Centro" className="bg-[#18181b] text-white">Santiago Centro</option>
+                  <option value="Providencia" className="bg-[#18181b] text-white">Providencia</option>
+                  <option value="Ñuñoa" className="bg-[#18181b] text-white">Ñuñoa</option>
+                  <option value="Las Condes" className="bg-[#18181b] text-white">Las Condes</option>
                 </select>
               </div>
               <button type="submit" disabled={enviando} className="w-full bg-white hover:bg-slate-200 text-black font-black py-3.5 rounded-xl transition-colors mt-2">{enviando ? 'Procesando...' : 'Crear Edificio'}</button>
