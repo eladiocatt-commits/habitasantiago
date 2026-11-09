@@ -3,10 +3,9 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare, ChevronDown
 } from 'lucide-react';
 
-// Pin moderno con CSS y Gradientes (Reemplaza al feo por defecto)
 const modernIcon = L.divIcon({
   className: 'custom-modern-marker',
   html: `
@@ -63,44 +62,47 @@ const PanelEdificio = ({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full md:w-[480px] bg-[#09090b] border-l border-white/5 shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-right duration-300">
-      <div className="relative h-64 w-full flex-shrink-0 bg-slate-900 group">
-        <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
+    <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto w-full md:w-[480px] bg-[#09090b] border-l border-white/5 shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-bottom md:slide-in-from-right duration-300">
+      
+      {/* HEADER PANORÁMICO (HERO) */}
+      <div className="relative h-56 md:h-64 w-full flex-shrink-0 bg-slate-900 group">
+        <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent"></div>
-        <div className="absolute top-5 left-5 right-5 flex justify-between items-center z-10">
-          <button onClick={cerrar} className="p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white transition-all">
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+          <button onClick={cerrar} className="p-2.5 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-white transition-all active:scale-95">
             <X className="w-5 h-5" />
           </button>
           <div className="flex gap-2">
-            <button onClick={(e) => toggleFavorito(edificio.id, e)} className={`p-2 backdrop-blur-md border rounded-full transition-all ${favoritos.includes(edificio.id) ? 'bg-rose-500/20 border-rose-500/50 text-rose-500' : 'bg-black/40 hover:bg-black/60 border-white/10 text-white'}`}>
+            <button onClick={(e) => toggleFavorito(edificio.id, e)} className={`p-2.5 backdrop-blur-md border rounded-full transition-all active:scale-95 ${favoritos.includes(edificio.id) ? 'bg-rose-500/20 border-rose-500/50 text-rose-500' : 'bg-black/60 border-white/10 text-white'}`}>
               <Heart className={`w-5 h-5 ${favoritos.includes(edificio.id) ? 'fill-rose-500' : ''}`} />
             </button>
           </div>
         </div>
-        <div className="absolute bottom-5 left-6 right-6 z-10">
+        <div className="absolute bottom-4 left-5 right-5 z-10">
           <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white backdrop-blur-md rounded-lg border border-white/10 mb-2 inline-block">
             {edificio.comuna}
           </span>
-          <h2 className="text-2xl font-black text-white leading-tight">{edificio.nombre}</h2>
-          <p className="text-sm text-slate-300 flex items-center gap-1.5 mt-1 font-medium">
-            <MapPin className="w-4 h-4 text-indigo-400" /> {edificio.direccion}
+          <h2 className="text-xl md:text-2xl font-black text-white leading-tight">{edificio.nombre}</h2>
+          <p className="text-xs md:text-sm text-slate-300 flex items-center gap-1.5 mt-1 font-medium truncate">
+            <MapPin className="w-4 h-4 text-indigo-400 flex-shrink-0" /> {edificio.direccion}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar p-6">
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-2xl transition-all shadow-[0_0_20px_rgba(79,70,229,0.2)] hover:scale-[1.02]">
-            <MessageSquare className="w-5 h-5" />
+      {/* CUERPO SCROLLABLE OPTIMIZADO TÁCTIL */}
+      <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-6 pb-24 no-scrollbar">
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button onClick={() => requerirAuth(abrirModalResena)} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 px-4 rounded-2xl transition-all shadow-lg active:scale-95">
+            <MessageSquare className="w-4 h-4" />
             <span className="text-xs font-bold">Opinar</span>
           </button>
-          <button onClick={() => abrirModalFoto()} className="flex flex-col items-center justify-center gap-1.5 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/5 p-3 rounded-2xl transition-all hover:scale-[1.02]">
-            <Camera className="w-5 h-5" />
+          <button onClick={() => abrirModalFoto()} className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/5 py-3.5 px-4 rounded-2xl transition-all active:scale-95">
+            <Camera className="w-4 h-4" />
             <span className="text-xs font-bold">Subir Foto</span>
           </button>
         </div>
 
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Información Financiera</h3>
           <div className="grid grid-cols-1 gap-3">
             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
@@ -114,12 +116,12 @@ const PanelEdificio = ({
             </div>
 
             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-3">
                 <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Home className="w-5 h-5 text-emerald-500" /></div>
                 <p className="text-[11px] text-slate-400 font-medium">Arriendo por Tipología</p>
               </div>
               {Object.keys(promediosArriendoPorHab).length === 0 ? (
-                <p className="text-[11px] text-slate-600 italic">No hay datos registrados por los vecinos.</p>
+                <p className="text-[11px] text-slate-600 italic">No hay datos registrados aún.</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
@@ -134,36 +136,36 @@ const PanelEdificio = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between bg-white/[0.03] border border-white/5 p-4 rounded-2xl mb-8">
+        <div className="flex items-center justify-between bg-white/[0.03] border border-white/5 p-4 rounded-2xl mb-6">
           <div className="flex items-center gap-2">
             <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
             <div>
               <p className="text-lg font-black text-white leading-none">{edificio.calificacion_promedio || 'N/A'}</p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1">Calificación Vecinal</p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1">Calificación</p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-lg font-black text-white leading-none">{resenas.length}</p>
-            <p className="text-[10px] text-slate-400 font-medium mt-1">Opiniones Totales</p>
+            <p className="text-[10px] text-slate-400 font-medium mt-1">Opiniones</p>
           </div>
         </div>
 
         {fotosComunidad.length > 0 && (
-          <div className="mb-8">
+          <div className="mb-6">
              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Fotos de Vecinos</h3>
              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                {fotosComunidad.map((r, i) => (
-                 <img key={i} src={r.url_imagen} alt="Vecinal" onClick={() => window.open(r.url_imagen, '_blank')} className="w-24 h-24 rounded-2xl object-cover border border-white/10 cursor-pointer hover:border-indigo-500 transition-all flex-shrink-0" />
+                 <img key={i} src={r.url_imagen} alt="Vecinal" onClick={() => window.open(r.url_imagen, '_blank')} className="w-24 h-24 rounded-2xl object-cover border border-white/10 flex-shrink-0" />
                ))}
              </div>
           </div>
         )}
 
         <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Últimas Reseñas</h3>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Reseñas</h3>
           <div className="space-y-4">
             {resenas.length === 0 ? (
-              <p className="text-sm text-slate-600 italic">Este edificio aún no tiene opiniones. Sé el primero.</p>
+              <p className="text-xs text-slate-600 italic">Sin opiniones aún.</p>
             ) : (
               resenas.map((r) => {
                 const yaVotado = likesUsuario.includes(r.id);
@@ -173,7 +175,7 @@ const PanelEdificio = ({
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-bold text-sm text-white">{r.titulo}</h4>
                       {esMia && (
-                        <button onClick={() => handleEliminarResena(r.id)} className="text-rose-500 hover:text-rose-400 bg-rose-500/10 p-1.5 rounded-lg transition-colors">
+                        <button onClick={() => handleEliminarResena(r.id)} className="text-rose-500 bg-rose-500/10 p-1.5 rounded-lg">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
@@ -188,8 +190,8 @@ const PanelEdificio = ({
                     {(r.habitaciones || r.gasto_comun || r.arriendo) && (
                       <div className="flex flex-wrap gap-2 mb-3 bg-black/20 p-2 rounded-xl border border-white/5 text-[10px]">
                         {r.habitaciones && <span className="text-slate-300">🛏️ {r.habitaciones} D.</span>}
-                        {r.gasto_comun && <span className="text-amber-400/80">GC: ${Number(r.gasto_comun).toLocaleString('es-CL')}</span>}
-                        {r.arriendo && <span className="text-emerald-400/80">Arr: ${Number(r.arriendo).toLocaleString('es-CL')}</span>}
+                        {r.gasto_comun && <span className="text-amber-400">GC: ${Number(r.gasto_comun).toLocaleString('es-CL')}</span>}
+                        {r.arriendo && <span className="text-emerald-400">Arr: ${Number(r.arriendo).toLocaleString('es-CL')}</span>}
                       </div>
                     )}
 
@@ -198,9 +200,9 @@ const PanelEdificio = ({
                         <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">
                           {r.usuario_email ? r.usuario_email.charAt(0).toUpperCase() : 'V'}
                         </div>
-                        <span className="text-[10px] text-slate-500 font-medium">{new Date(r.creado_en).toLocaleDateString('es-CL')}</span>
+                        <span className="text-[10px] text-slate-500">{new Date(r.creado_en).toLocaleDateString('es-CL')}</span>
                       </div>
-                      <button onClick={() => requerirAuth(() => handleDarUtil(r.id, r.util_count))} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${yaVotado ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'}`}>
+                      <button onClick={() => requerirAuth(() => handleDarUtil(r.id, r.util_count))} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${yaVotado ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>
                         <ThumbsUp className={`w-3 h-3 ${yaVotado ? 'fill-white' : ''}`} /> {r.util_count || 0}
                       </button>
                     </div>
@@ -212,8 +214,9 @@ const PanelEdificio = ({
         </div>
 
       </div>
-      <div className="p-4 border-t border-white/10 bg-[#09090b]/90 backdrop-blur-xl">
-         <button onClick={() => requerirAuth(abrirModalAlerta)} className="w-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-bold py-3.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+
+      <div className="p-4 border-t border-white/10 bg-[#09090b]/95 backdrop-blur-xl absolute bottom-0 left-0 right-0 z-20">
+         <button onClick={() => requerirAuth(abrirModalAlerta)} className="w-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
            <Bell className="w-4 h-4" /> Recibir alertas de arriendos
          </button>
       </div>
@@ -391,7 +394,6 @@ export default function App() {
     setEnviando(false);
   };
 
-  // Filtrado de edificios
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || e.comuna.toLowerCase().includes(busqueda.toLowerCase()) || e.direccion.toLowerCase().includes(busqueda.toLowerCase());
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
@@ -409,35 +411,32 @@ export default function App() {
   const esAdmin = session?.user?.email === 'eladiocatt@gmail.com';
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-[#09090b] font-sans relative text-slate-200 selection:bg-indigo-500 selection:text-white flex">
+    <div className="w-screen h-[100dvh] overflow-hidden bg-[#09090b] font-sans relative text-slate-200 selection:bg-indigo-500 selection:text-white flex">
       
       {mensajeNotificacion && (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[99999] bg-white text-black px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl shadow-black/50 animate-in slide-in-from-top-4 font-bold text-xs tracking-wide">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[99999] bg-white text-black px-5 py-2.5 rounded-full flex items-center gap-2.5 shadow-2xl shadow-black/50 animate-in slide-in-from-top-4 font-bold text-xs">
           {mensajeNotificacion.tipo === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <AlertCircle className="w-4 h-4 text-rose-500" />}
           {mensajeNotificacion.texto}
         </div>
       )}
 
-      {/* ÁREA IZQUIERDA: MAPA Y CONTROLES FLOTANTES */}
-      <div className={`relative h-full transition-all duration-500 ease-in-out ${edificioSeleccionado ? 'w-full md:w-[calc(100%-480px)]' : 'w-full'}`}>
+      {/* ÁREA DE MAPA (Ocupa toda la pantalla en móvil, o se ajusta si hay panel abierto en PC) */}
+      <div className="relative w-full h-full">
         
-        {/* HEADER FLOTANTE MINIMALISTA */}
-        <header className="absolute top-6 left-6 right-6 z-30 flex items-start justify-between gap-4 pointer-events-none">
+        {/* HEADER FLOTANTE TÁCTIL OPTIMIZADO */}
+        <header className="absolute top-4 left-4 right-4 z-30 flex items-start justify-between gap-3 pointer-events-none">
           
-          <div className="pointer-events-auto flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full max-w-lg">
-             {/* Logo Reset Button */}
-             <div onClick={resetearApp} className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 hover:border-white/20 transition-all cursor-pointer group">
-               <div className="bg-white text-black p-1.5 rounded-lg shadow-md group-hover:scale-110 transition-transform"><Building className="w-4 h-4" /></div>
-               <h1 className="text-sm font-black tracking-tight text-white">HabitaSantiago</h1>
+          <div className="pointer-events-auto flex items-center gap-2 w-full max-w-md">
+             <div onClick={resetearApp} className="bg-[#09090b]/90 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-2xl flex items-center justify-center cursor-pointer active:scale-95 transition-all">
+               <Building className="w-5 h-5 text-white" />
              </div>
 
-             {/* Buscador Predictivo */}
              <div className="relative w-full">
-               <div className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 px-4 py-3.5 rounded-2xl shadow-2xl flex items-center focus-within:border-indigo-500/50 transition-all">
-                 <Search className="w-4 h-4 text-slate-400 mr-3" />
+               <div className="bg-[#09090b]/90 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-2xl flex items-center focus-within:border-indigo-500/50 transition-all">
+                 <Search className="w-4 h-4 text-slate-400 mr-2.5 flex-shrink-0" />
                  <input 
                    type="text" 
-                   placeholder="Buscar comuna, edificio..." 
+                   placeholder="Buscar edificio..." 
                    value={busqueda} 
                    onChange={(e) => setBusqueda(e.target.value)} 
                    onFocus={() => setBuscadorActivo(true)}
@@ -446,21 +445,19 @@ export default function App() {
                  />
                </div>
                
-               {/* Dropdown Resultados */}
                {busqueda && buscadorActivo && (
-                 <div className="absolute top-full left-0 right-0 mt-2 bg-[#18181b]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50">
+                 <div className="absolute top-full left-0 right-0 mt-2 bg-[#18181b]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50 max-h-60 overflow-y-auto">
                    {edificiosFiltrados.length > 0 ? (
                      edificiosFiltrados.slice(0, 5).map(ed => (
-                       <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setBusqueda(''); setBuscadorActivo(false); }} className="px-4 py-3 hover:bg-white/10 cursor-pointer flex items-center justify-between border-b border-white/5 last:border-0 transition-colors">
+                       <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setBusqueda(''); setBuscadorActivo(false); }} className="px-4 py-3 hover:bg-white/10 cursor-pointer flex items-center justify-between border-b border-white/5 last:border-0">
                          <div>
                            <p className="text-xs font-bold text-white">{ed.nombre}</p>
-                           <p className="text-[10px] text-slate-400 mt-0.5">{ed.direccion}</p>
+                           <p className="text-[10px] text-slate-400">{ed.direccion}</p>
                          </div>
-                         <span className="text-[9px] bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-lg font-bold uppercase tracking-widest">{ed.comuna}</span>
                        </div>
                      ))
                    ) : (
-                     <div className="px-4 py-3 text-xs text-slate-400 italic">No se encontraron edificios.</div>
+                     <div className="px-4 py-3 text-xs text-slate-400 italic">Sin resultados.</div>
                    )}
                  </div>
                )}
@@ -468,41 +465,35 @@ export default function App() {
           </div>
 
           <div className="pointer-events-auto flex items-center gap-2">
-            <button onClick={() => { if(!session){setModoAuth('login'); setModalAuthAbierto(true);} else {setModalEdificioAbierto(true);} }} className="hidden sm:flex bg-white hover:bg-slate-200 text-black text-xs font-bold px-4 py-3 rounded-2xl items-center gap-2 transition-all shadow-lg hover:scale-105">
-              <Plus className="w-4 h-4" /> Nuevo Edificio
-            </button>
-            <button onClick={() => { if(!session){setModoAuth('login'); setModalAuthAbierto(true);} else {setSidebarAbierto(true);} }} className="bg-[#09090b]/80 backdrop-blur-xl border border-white/10 p-3 rounded-2xl text-white hover:bg-white/10 transition-all shadow-2xl">
+            <button onClick={() => { if(!session){setModoAuth('login'); setModalAuthAbierto(true);} else {setSidebarAbierto(true);} }} className="bg-[#09090b]/90 backdrop-blur-xl border border-white/10 p-3 rounded-2xl text-white hover:bg-white/10 transition-all shadow-2xl active:scale-95">
                {session ? <Menu className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
             </button>
           </div>
         </header>
 
         {/* FILTROS FLOTANTES INFERIORES */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none w-full max-w-lg px-4">
-          <div className="pointer-events-auto bg-[#09090b]/90 backdrop-blur-xl border border-white/10 p-1.5 rounded-full shadow-2xl shadow-black flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-            <button onClick={() => setFiltroComuna('todas')} className={`px-4 py-2.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Todas</button>
-            <button onClick={() => setFiltroComuna('Santiago Centro')} className={`px-4 py-2.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Santiago Centro' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Stgo Centro</button>
-            <button onClick={() => setFiltroComuna('Providencia')} className={`px-4 py-2.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Providencia' ? 'bg-white text-black' : 'text-slate-400 hover:text-white'}`}>Providencia</button>
-            <div className="w-[1px] h-4 bg-white/10 mx-1"></div>
-            <button onClick={() => setFiltroRating(!filtroRating)} className={`px-4 py-2.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${filtroRating ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white'}`}>
-              <Star size={12} className={filtroRating ? 'fill-amber-400' : ''} /> 4.0+
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none w-full max-w-sm px-4">
+          <div className="pointer-events-auto bg-[#09090b]/95 backdrop-blur-xl border border-white/10 p-1.5 rounded-full shadow-2xl flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
+            <button onClick={() => setFiltroComuna('todas')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-white text-black' : 'text-slate-400'}`}>Todas</button>
+            <button onClick={() => setFiltroComuna('Santiago Centro')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Santiago Centro' ? 'bg-white text-black' : 'text-slate-400'}`}>Stgo Centro</button>
+            <button onClick={() => setFiltroComuna('Providencia')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Providencia' ? 'bg-white text-black' : 'text-slate-400'}`}>Providencia</button>
+            <button onClick={() => setFiltroRating(!filtroRating)} className={`px-3 py-2 rounded-full text-[11px] font-bold transition-all flex items-center gap-1 whitespace-nowrap ${filtroRating ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400'}`}>
+              <Star size={11} className={filtroRating ? 'fill-amber-400' : ''} /> 4.0+
             </button>
           </div>
         </div>
 
         {/* MAPA */}
         <MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
-          {/* ESTILOS CSS INYECTADOS PARA FORZAR DARK MODE EN POPUPS Y MAPA */}
           <style>{`
             .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
             .leaflet-popup-content-wrapper, .leaflet-popup-tip {
               background-color: #18181b !important;
               color: #f8fafc !important;
               border: 1px solid rgba(255,255,255,0.1) !important;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
             }
             .leaflet-container a.leaflet-popup-close-button { color: #94a3b8 !important; }
-            .leaflet-popup-content { margin: 12px !important; }
+            .leaflet-popup-content { margin: 10px !important; }
           `}</style>
           
           <MapResizer edificioSeleccionado={edificioSeleccionado} />
@@ -512,8 +503,8 @@ export default function App() {
             <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }}>
               <Popup>
                 <div>
-                  <h4 className="font-bold text-sm text-white">{edificio.nombre}</h4>
-                  <div className="text-[11px] text-amber-500 font-bold mt-1">★ {edificio.calificacion_promedio || 'Sin notas'}</div>
+                  <h4 className="font-bold text-xs text-white">{edificio.nombre}</h4>
+                  <div className="text-[10px] text-amber-500 font-bold mt-0.5">★ {edificio.calificacion_promedio || 'Sin notas'}</div>
                 </div>
               </Popup>
             </Marker>
@@ -521,7 +512,7 @@ export default function App() {
         </MapContainer>
       </div>
 
-      {/* ÁREA DERECHA: PANEL LATERAL DEL EDIFICIO */}
+      {/* PANEL LATERAL DE EDIFICIO */}
       {edificioSeleccionado && (
          <PanelEdificio 
            edificio={edificioSeleccionado} 
@@ -543,68 +534,63 @@ export default function App() {
          />
       )}
 
-      {/* MENÚ DE USUARIO A LA DERECHA */}
+      {/* MENÚ LATERAL */}
       {sidebarAbierto && (
         <div className="fixed inset-0 z-[99999] flex justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarAbierto(false)}></div>
-          <div className="relative w-full max-w-sm bg-[#09090b] h-full shadow-2xl border-l border-white/5 flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="p-6 pb-0 flex justify-between items-center">
-              <h2 className="text-lg font-black text-white">Mi Cuenta</h2>
-              <button onClick={() => setSidebarAbierto(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+          <div className="relative w-full max-w-xs bg-[#09090b] h-full shadow-2xl border-l border-white/5 flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="p-5 pb-0 flex justify-between items-center">
+              <h2 className="text-base font-black text-white">Mi Cuenta</h2>
+              <button onClick={() => setSidebarAbierto(false)} className="p-2 hover:bg-white/10 rounded-full"><X className="w-5 h-5" /></button>
             </div>
             
-            <div className="p-6">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center font-black text-xl">
+            <div className="p-5 overflow-y-auto flex-1">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center font-black text-lg">
                   {nombreUsuario ? nombreUsuario.charAt(0).toUpperCase() : 'U'}
                 </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">{nombreUsuario || 'Usuario'}</h3>
-                  <p className="text-xs text-slate-400">{session?.user?.email}</p>
+                <div className="truncate">
+                  <h3 className="font-bold text-white text-sm truncate">{nombreUsuario || 'Usuario'}</h3>
+                  <p className="text-[11px] text-slate-400 truncate">{session?.user?.email}</p>
                 </div>
               </div>
 
-              <div className="space-y-2 mb-8">
-                <button onClick={() => setVistaSidebar('perfil')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${vistaSidebar === 'perfil' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}><Settings className="w-4 h-4" /> Mi Perfil</button>
-                <button onClick={() => setVistaSidebar('password')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${vistaSidebar === 'password' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}><KeyRound className="w-4 h-4" /> Seguridad</button>
-                <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${vistaSidebar === 'favoritos' ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
-                {esAdmin && <button onClick={cargarAlertasAdmin} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold text-amber-500 hover:bg-amber-500/10 transition-all"><ShieldAlert className="w-4 h-4" /> Admin Leads</button>}
+              <div className="space-y-1.5 mb-6">
+                <button onClick={() => setVistaSidebar('perfil')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'perfil' ? 'bg-white/10 text-white' : 'text-slate-400'}`}><Settings className="w-4 h-4" /> Perfil</button>
+                <button onClick={() => setVistaSidebar('password')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'password' ? 'bg-white/10 text-white' : 'text-slate-400'}`}><KeyRound className="w-4 h-4" /> Seguridad</button>
+                <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'favoritos' ? 'bg-white/10 text-white' : 'text-slate-400'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
+                <button onClick={() => { setModalEdificioAbierto(true); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-indigo-400 bg-indigo-500/10"><Plus className="w-4 h-4" /> Nuevo Edificio</button>
+                {esAdmin && <button onClick={cargarAlertasAdmin} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-amber-500"><ShieldAlert className="w-4 h-4" /> Admin Leads</button>}
               </div>
 
               {vistaSidebar === 'perfil' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs text-slate-400 font-bold mb-2">Nombre Público</label>
-                    <input type="text" value={nombreUsuario} onChange={(e) => setNombreUsuario(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500" />
-                  </div>
-                  <button onClick={() => mostrarAviso('¡Perfil actualizado!')} className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">Guardar Cambios</button>
+                <div className="space-y-3">
+                  <input type="text" value={nombreUsuario} onChange={(e) => setNombreUsuario(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white" />
+                  <button onClick={() => mostrarAviso('¡Perfil actualizado!')} className="w-full bg-white text-black font-bold py-2.5 rounded-xl text-xs">Guardar</button>
                 </div>
               )}
 
               {vistaSidebar === 'password' && (
-                <form onSubmit={handleCambiarPasswordSidebar} className="space-y-4">
-                  <div>
-                    <label className="block text-xs text-slate-400 font-bold mb-2">Nueva Contraseña</label>
-                    <input type="password" required minLength={6} value={nuevaPasswordSidebar} onChange={(e) => setNuevaPasswordSidebar(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500" />
-                  </div>
-                  <button type="submit" disabled={enviando} className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-slate-200 transition-colors">{enviando ? 'Guardando...' : 'Actualizar'}</button>
+                <form onSubmit={handleCambiarPasswordSidebar} className="space-y-3">
+                  <input type="password" required minLength={6} placeholder="Nueva contraseña" value={nuevaPasswordSidebar} onChange={(e) => setNuevaPasswordSidebar(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white" />
+                  <button type="submit" className="w-full bg-white text-black font-bold py-2.5 rounded-xl text-xs">Actualizar</button>
                 </form>
               )}
 
               {vistaSidebar === 'favoritos' && (
-                <div className="space-y-3">
-                  {favoritos.length === 0 ? <p className="text-sm text-slate-500">No hay guardados.</p> : edificios.filter(e => favoritos.includes(e.id)).map(ed => (
-                    <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setSidebarAbierto(false); }} className="bg-white/5 hover:bg-white/10 p-4 rounded-xl border border-white/5 cursor-pointer transition-colors">
-                      <div className="font-bold text-white text-sm">{ed.nombre}</div>
-                      <div className="text-xs text-slate-400 mt-1">{ed.comuna}</div>
+                <div className="space-y-2">
+                  {favoritos.length === 0 ? <p className="text-xs text-slate-500">Sin favoritos.</p> : edificios.filter(e => favoritos.includes(e.id)).map(ed => (
+                    <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setSidebarAbierto(false); }} className="bg-white/5 p-3 rounded-xl cursor-pointer">
+                      <div className="font-bold text-white text-xs">{ed.nombre}</div>
+                      <div className="text-[10px] text-slate-400">{ed.comuna}</div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
             
-            <div className="mt-auto p-6">
-              <button onClick={handleCerrarSesion} className="w-full flex items-center justify-center gap-2 text-rose-500 font-bold py-3 rounded-xl hover:bg-rose-500/10 transition-colors">
+            <div className="p-5 border-t border-white/5">
+              <button onClick={handleCerrarSesion} className="w-full flex items-center justify-center gap-2 text-rose-500 font-bold py-2.5 rounded-xl text-xs bg-rose-500/10">
                 <LogOut className="w-4 h-4" /> Cerrar Sesión
               </button>
             </div>
@@ -612,182 +598,115 @@ export default function App() {
         </div>
       )}
 
-      {/* --- MODALES CON FONDOS OSCUROS FIJOS --- */}
-      
-      {/* MODAL AUTH */}
+      {/* MODALES TÁCTILES */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalAuthAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-[24px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <button onClick={() => setModalAuthAbierto(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl">
+            <button onClick={() => setModalAuthAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
             
-            {modoAuth !== 'recuperar' && (
-              <div className="flex bg-black/50 p-1 rounded-xl mb-6">
-                <button onClick={() => { setModoAuth('login'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modoAuth === 'login' ? 'bg-white text-black' : 'text-slate-400'}`}>Entrar</button>
-                <button onClick={() => { setModoAuth('registro'); setAuthError(''); setRegistroExitosoMsg(false); }} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modoAuth === 'registro' ? 'bg-white text-black' : 'text-slate-400'}`}>Registro</button>
-              </div>
-            )}
+            <div className="flex bg-black/50 p-1 rounded-xl mb-5">
+              <button onClick={() => setModoAuth('login')} className={`flex-1 py-2 text-xs font-bold rounded-lg ${modoAuth === 'login' ? 'bg-white text-black' : 'text-slate-400'}`}>Entrar</button>
+              <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2 text-xs font-bold rounded-lg ${modoAuth === 'registro' ? 'bg-white text-black' : 'text-slate-400'}`}>Registro</button>
+            </div>
 
-            {recuperacionEnviada || registroExitosoMsg ? (
-              <div className="text-center py-4">
-                <div className="w-12 h-12 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle2 className="w-6 h-6" /></div>
-                <h3 className="text-white font-bold text-lg mb-2">{recuperacionEnviada ? 'Correo Enviado' : 'Registro Exitoso'}</h3>
-                <p className="text-sm text-slate-400 mb-6">Revisa tu bandeja de entrada.</p>
-                <button onClick={() => { setModoAuth('login'); setRecuperacionEnviada(false); setRegistroExitosoMsg(false); }} className="w-full bg-white text-black py-3 rounded-xl font-bold">Volver</button>
-              </div>
-            ) : (
-              <form onSubmit={handleAuthSubmit} className="space-y-4">
-                {authError && <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-medium">{authError}</div>}
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1.5">Correo</label>
-                  <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500" />
-                </div>
-                {modoAuth !== 'recuperar' && (
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 mb-1.5">Contraseña</label>
-                    <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500" />
-                  </div>
-                )}
-                {modoAuth === 'login' && <div className="text-right"><button type="button" onClick={() => setModoAuth('recuperar')} className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300">¿Olvidaste tu clave?</button></div>}
-                
-                <button type="submit" disabled={enviando} className="w-full bg-white hover:bg-slate-200 text-black font-bold py-3 rounded-xl mt-2 transition-colors">
-                  {enviando ? 'Cargando...' : modoAuth === 'login' ? 'Iniciar Sesión' : modoAuth === 'registro' ? 'Crear Cuenta' : 'Enviar Link'}
-                </button>
-                {modoAuth === 'recuperar' && <button type="button" onClick={() => setModoAuth('login')} className="w-full text-xs text-slate-400 font-bold mt-4">Volver</button>}
-              </form>
-            )}
+            <form onSubmit={handleAuthSubmit} className="space-y-3.5">
+              {authError && <div className="p-2.5 bg-rose-500/10 text-rose-400 text-xs rounded-xl">{authError}</div>}
+              <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-black/50 border border-white/10 px-3.5 py-3 rounded-xl text-xs text-white" />
+              <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 px-3.5 py-3 rounded-xl text-xs text-white" />
+              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl text-xs mt-1">{modoAuth === 'login' ? 'Entrar' : 'Registrarse'}</button>
+            </form>
           </div>
         </div>
       )}
 
-      {/* MODAL RESEÑA */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalResenaAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-[24px] w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar animate-in zoom-in-95">
-            <button onClick={() => setModalResenaAbierto(false)} className="absolute top-5 right-5 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-xl font-black text-white mb-1">Escribir Reseña</h3>
-            <p className="text-xs text-indigo-400 font-bold mb-6">{edificioSeleccionado?.nombre}</p>
+          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-sm p-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <button onClick={() => setModalResenaAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
+            <h3 className="text-base font-black text-white mb-1">Escribir Reseña</h3>
+            <p className="text-[11px] text-indigo-400 font-bold mb-4">{edificioSeleccionado?.nombre}</p>
 
-            <form onSubmit={handleGuardarResena} className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Título</label>
-                <input type="text" required placeholder="Ej: Excelente conectividad" value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500" />
-              </div>
+            <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs">
+              <input type="text" required placeholder="Título (Ej: Muy tranquilo)" value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
+              <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white">
+                <option value="Excelente conectividad al metro" className="bg-[#18181b]">🚇 Excelente conectividad</option>
+                <option value="Ascensores rápidos y bien mantenidos" className="bg-[#18181b]">🛗 Ascensores rápidos</option>
+                <option value="Zona muy segura y tranquila" className="bg-[#18181b]">🛡️ Zona segura</option>
+                <option value="Problemas frecuentes con ruidos" className="bg-[#18181b]">🔊 Problemas con ruidos</option>
+              </select>
+              <textarea required rows="3" placeholder="Comentario..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white resize-none" />
               
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Etiqueta Principal</label>
-                <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 appearance-none">
-                  <option value="Excelente conectividad al metro" className="bg-[#18181b] text-white">🚇 Excelente conectividad</option>
-                  <option value="Ascensores rápidos y bien mantenidos" className="bg-[#18181b] text-white">🛗 Ascensores rápidos</option>
-                  <option value="Zona muy segura y tranquila" className="bg-[#18181b] text-white">🛡️ Zona segura</option>
-                  <option value="Problemas frecuentes con ruidos" className="bg-[#18181b] text-white">🔊 Problemas con ruidos</option>
-                  <option value="Gastos comunes elevados" className="bg-[#18181b] text-white">💰 Gastos comunes altos</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Experiencia</label>
-                <textarea required rows="3" placeholder="Detalla tu experiencia..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 resize-none" />
-              </div>
-
-              <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <div className="bg-white/5 p-3 rounded-xl">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm font-bold text-white">💰 Agregar datos de costo (Opcional)</span>
-                  <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-4 h-4 rounded accent-indigo-500" />
+                  <span className="font-bold">💰 Costos (Opcional)</span>
+                  <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-4 h-4 accent-indigo-500" />
                 </label>
                 {incluirDatosEconomicos && (
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Dormitorios</label>
-                      <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-xs text-white">
-                        <option value="1" className="bg-[#18181b]">1 D</option><option value="2" className="bg-[#18181b]">2 D</option><option value="3" className="bg-[#18181b]">3 D</option><option value="4" className="bg-[#18181b]">4+ D</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 mb-1">GC ($)</label>
-                      <input type="number" placeholder="Ej: 90000" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-xs text-white" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Arriendo ($)</label>
-                      <input type="number" placeholder="Ej: 450000" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-xs text-white" />
-                    </div>
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px]">
+                      <option value="1">1 D</option><option value="2">2 D</option><option value="3">3 D</option>
+                    </select>
+                    <input type="number" placeholder="GC ($)" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px]" />
+                    <input type="number" placeholder="Arriendo" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px]" />
                   </div>
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Foto Adjunta (Opcional)</label>
-                <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:font-bold hover:file:bg-white/20 transition-all cursor-pointer" />
-              </div>
-
-              <button type="submit" disabled={enviando} className="w-full bg-white hover:bg-slate-200 text-black font-black py-3.5 rounded-xl transition-colors mt-2">
-                {enviando ? 'Guardando...' : 'Publicar'}
-              </button>
+              <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-[11px] text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white" />
+              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl mt-1">Publicar</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL NUEVO EDIFICIO */}
       {modalEdificioAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalEdificioAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-[24px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95">
-            <button onClick={() => setModalEdificioAbierto(false)} className="absolute top-5 right-5 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-xl font-black text-white mb-6">Nuevo Edificio</h3>
+          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-5 shadow-2xl">
+            <button onClick={() => setModalEdificioAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
+            <h3 className="text-base font-black text-white mb-4">Nuevo Edificio</h3>
             
-            <form onSubmit={handleGuardarEdificio} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Nombre</label>
-                <input type="text" required placeholder="Ej: Edificio Parque" value={nuevoEdificio.nombre} onChange={(e) => setNuevoEdificio({...nuevoEdificio, nombre: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Dirección</label>
-                <input type="text" required placeholder="Ej: Av. Bustamante 456" value={nuevoEdificio.direccion} onChange={(e) => setNuevoEdificio({...nuevoEdificio, direccion: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Comuna</label>
-                <select value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 appearance-none">
-                  <option value="Santiago Centro" className="bg-[#18181b] text-white">Santiago Centro</option>
-                  <option value="Providencia" className="bg-[#18181b] text-white">Providencia</option>
-                  <option value="Ñuñoa" className="bg-[#18181b] text-white">Ñuñoa</option>
-                  <option value="Las Condes" className="bg-[#18181b] text-white">Las Condes</option>
-                </select>
-              </div>
-              <button type="submit" disabled={enviando} className="w-full bg-white hover:bg-slate-200 text-black font-black py-3.5 rounded-xl transition-colors mt-2">{enviando ? 'Procesando...' : 'Crear Edificio'}</button>
+            <form onSubmit={handleGuardarEdificio} className="space-y-3.5 text-xs">
+              <input type="text" required placeholder="Nombre (Ej: Edificio Parque)" value={nuevoEdificio.nombre} onChange={(e) => setNuevoEdificio({...nuevoEdificio, nombre: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
+              <input type="text" required placeholder="Dirección exacta" value={nuevoEdificio.direccion} onChange={(e) => setNuevoEdificio({...nuevoEdificio, direccion: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
+              <select value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white">
+                <option value="Santiago Centro" className="bg-[#18181b]">Santiago Centro</option>
+                <option value="Providencia" className="bg-[#18181b]">Providencia</option>
+                <option value="Ñuñoa" className="bg-[#18181b]">Ñuñoa</option>
+                <option value="Las Condes" className="bg-[#18181b]">Las Condes</option>
+              </select>
+              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl mt-1">Crear Edificio</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL ALERTA */}
       {modalAlertaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalAlertaAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-[24px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95">
-            <button onClick={() => setModalAlertaAbierto(false)} className="absolute top-5 right-5 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-xl font-black text-white mb-2">Alerta de Arriendo</h3>
-            <p className="text-sm text-slate-400 mb-6">Te avisaremos al correo si hay disponibilidad en <span className="text-white font-bold">{edificioSeleccionado?.nombre}</span>.</p>
-            <form onSubmit={handleGuardarAlerta} className="space-y-4">
-              <input type="email" required placeholder="tu@email.com" value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)} className="w-full bg-black/50 border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500" />
-              <button type="submit" disabled={enviando} className="w-full bg-white hover:bg-slate-200 text-black font-black py-3.5 rounded-xl transition-colors">{enviando ? 'Guardando...' : 'Confirmar Alerta'}</button>
+          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-5 shadow-2xl">
+            <button onClick={() => setModalAlertaAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
+            <h3 className="text-base font-black text-white mb-1">Alerta de Arriendo</h3>
+            <p className="text-xs text-slate-400 mb-4">Te avisaremos si hay disponibilidad en este edificio.</p>
+            <form onSubmit={handleGuardarAlerta} className="space-y-3.5 text-xs">
+              <input type="email" required placeholder="tu@email.com" value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
+              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl">Confirmar</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL SUBIR FOTO */}
       {modalFotoAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalFotoAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-[24px] w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95">
-            <button onClick={() => setModalFotoAbierto(false)} className="absolute top-5 right-5 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-            <h3 className="text-xl font-black text-white mb-2">Aportar Foto</h3>
-            <p className="text-sm text-slate-400 mb-6">Sube una foto de la fachada o áreas comunes de este edificio.</p>
-            <form onSubmit={handleGuardarFotoRapida} className="space-y-4">
-              <input type="file" accept="image/*" required onChange={(e) => setArchivoFotoRapida(e.target.files[0])} className="w-full text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-white/10 file:text-white file:font-bold hover:file:bg-white/20 transition-all cursor-pointer" />
-              <button type="submit" disabled={enviando} className="w-full bg-white hover:bg-slate-200 text-black font-black py-3.5 rounded-xl transition-colors">{enviando ? 'Subiendo...' : 'Publicar Foto'}</button>
+          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-5 shadow-2xl">
+            <button onClick={() => setModalFotoAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
+            <h3 className="text-base font-black text-white mb-2">Aportar Foto</h3>
+            <form onSubmit={handleGuardarFotoRapida} className="space-y-3.5 text-xs">
+              <input type="file" accept="image/*" required onChange={(e) => setArchivoFotoRapida(e.target.files[0])} className="w-full text-slate-400 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white" />
+              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl">Subir</button>
             </form>
           </div>
         </div>
