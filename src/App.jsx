@@ -1,29 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare, ChevronDown
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare
 } from 'lucide-react';
 
+// Pin moderno unificado con el mismo tono de violeta de los botones principales
 const modernIcon = L.divIcon({
   className: 'custom-modern-marker',
   html: `
     <div style="
-      width: 28px; height: 28px; 
-      background: linear-gradient(135deg, #6366f1, #8b5cf6); 
+      width: 30px; height: 30px; 
+      background: linear-gradient(135deg, #6366f1, #4f46e5); 
       border: 2px solid #ffffff; 
       border-radius: 50% 50% 50% 0; 
       transform: rotate(-45deg); 
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.6);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.7);
       display: flex; align-items: center; justify-content: center;
     ">
       <div style="width: 8px; height: 8px; background: white; border-radius: 50%; transform: rotate(45deg);"></div>
     </div>
   `,
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -32]
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -35]
 });
 
 function MapResizer({ edificioSeleccionado }) {
@@ -62,9 +63,9 @@ const PanelEdificio = ({
   };
 
   return (
-    <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto w-full md:w-[480px] bg-[#09090b] border-l border-white/5 shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-bottom md:slide-in-from-right duration-300">
+    <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto w-full md:w-[480px] bg-[#09090b] border-l border-white/10 shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-bottom md:slide-in-from-right duration-300">
       
-      {/* HEADER PANORÁMICO (HERO) */}
+      {/* HERO PANORÁMICO */}
       <div className="relative h-56 md:h-64 w-full flex-shrink-0 bg-slate-900 group">
         <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent"></div>
@@ -79,7 +80,7 @@ const PanelEdificio = ({
           </div>
         </div>
         <div className="absolute bottom-4 left-5 right-5 z-10">
-          <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white backdrop-blur-md rounded-lg border border-white/10 mb-2 inline-block">
+          <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest bg-indigo-600/30 text-indigo-300 backdrop-blur-md rounded-lg border border-indigo-500/30 mb-2 inline-block">
             {edificio.comuna}
           </span>
           <h2 className="text-xl md:text-2xl font-black text-white leading-tight">{edificio.nombre}</h2>
@@ -89,23 +90,21 @@ const PanelEdificio = ({
         </div>
       </div>
 
-      {/* CUERPO SCROLLABLE OPTIMIZADO TÁCTIL */}
+      {/* CUERPO DEL PANEL */}
       <div className="flex-1 overflow-y-auto overscroll-contain p-5 md:p-6 pb-24 no-scrollbar">
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => requerirAuth(abrirModalResena)} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 px-4 rounded-2xl transition-all shadow-lg active:scale-95">
-            <MessageSquare className="w-4 h-4" />
-            <span className="text-xs font-bold">Opinar</span>
+          <button onClick={() => requerirAuth(abrirModalResena)} className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 px-4 rounded-2xl transition-all shadow-lg shadow-indigo-600/30 active:scale-95 font-bold text-xs">
+            <MessageSquare className="w-4 h-4" /> Opinar
           </button>
-          <button onClick={() => abrirModalFoto()} className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/5 py-3.5 px-4 rounded-2xl transition-all active:scale-95">
-            <Camera className="w-4 h-4" />
-            <span className="text-xs font-bold">Subir Foto</span>
+          <button onClick={() => abrirModalFoto()} className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 py-3.5 px-4 rounded-2xl transition-all active:scale-95 font-bold text-xs">
+            <Camera className="w-4 h-4" /> Subir Foto
           </button>
         </div>
 
         <div className="space-y-4 mb-6">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Información Financiera</h3>
           <div className="grid grid-cols-1 gap-3">
-            <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-[#121216] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-amber-500/10 rounded-xl"><DollarSign className="w-5 h-5 text-amber-500" /></div>
                 <div>
@@ -115,7 +114,7 @@ const PanelEdificio = ({
               </div>
             </div>
 
-            <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+            <div className="bg-[#121216] border border-white/5 rounded-2xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Home className="w-5 h-5 text-emerald-500" /></div>
                 <p className="text-[11px] text-slate-400 font-medium">Arriendo por Tipología</p>
@@ -125,7 +124,7 @@ const PanelEdificio = ({
               ) : (
                 <div className="grid grid-cols-3 gap-2">
                   {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
-                    <div key={hab} className="bg-black/20 rounded-xl p-2.5 text-center border border-white/5">
+                    <div key={hab} className="bg-black/30 rounded-xl p-2.5 text-center border border-white/5">
                       <div className="text-[10px] text-slate-400 font-bold mb-1">{hab} Dorm</div>
                       <div className="text-xs font-black text-emerald-400">{monto}</div>
                     </div>
@@ -136,7 +135,7 @@ const PanelEdificio = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between bg-white/[0.03] border border-white/5 p-4 rounded-2xl mb-6">
+        <div className="flex items-center justify-between bg-[#121216] border border-white/5 p-4 rounded-2xl mb-6">
           <div className="flex items-center gap-2">
             <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
             <div>
@@ -162,7 +161,7 @@ const PanelEdificio = ({
         )}
 
         <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Reseñas</h3>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Reseñas de la Comunidad</h3>
           <div className="space-y-4">
             {resenas.length === 0 ? (
               <p className="text-xs text-slate-600 italic">Sin opiniones aún.</p>
@@ -171,24 +170,23 @@ const PanelEdificio = ({
                 const yaVotado = likesUsuario.includes(r.id);
                 const esMia = session?.user?.email === r.usuario_email;
                 return (
-                  <div key={r.id} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                  <div key={r.id} className="bg-[#121216] border border-white/5 p-4 rounded-2xl">
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold text-sm text-white">{r.titulo}</h4>
+                      {r.etiqueta && (
+                        <span className="inline-block bg-indigo-500/15 text-indigo-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-indigo-500/30">
+                          {r.etiqueta}
+                        </span>
+                      )}
                       {esMia && (
-                        <button onClick={() => handleEliminarResena(r.id)} className="text-rose-500 bg-rose-500/10 p-1.5 rounded-lg">
+                        <button onClick={() => handleEliminarResena(r.id)} className="text-rose-500 bg-rose-500/10 p-1.5 rounded-lg ml-auto">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
-                    {r.etiqueta && (
-                      <span className="inline-block bg-indigo-500/10 text-indigo-400 text-[10px] font-bold px-2 py-1 rounded-lg border border-indigo-500/20 mb-2">
-                        {r.etiqueta}
-                      </span>
-                    )}
-                    <p className="text-xs text-slate-300 leading-relaxed mb-3">{r.comentario}</p>
+                    <p className="text-xs text-slate-200 leading-relaxed mb-3 whitespace-pre-wrap">{r.comentario}</p>
                     
                     {(r.habitaciones || r.gasto_comun || r.arriendo) && (
-                      <div className="flex flex-wrap gap-2 mb-3 bg-black/20 p-2 rounded-xl border border-white/5 text-[10px]">
+                      <div className="flex flex-wrap gap-2 mb-3 bg-black/30 p-2.5 rounded-xl border border-white/5 text-[10px]">
                         {r.habitaciones && <span className="text-slate-300">🛏️ {r.habitaciones} D.</span>}
                         {r.gasto_comun && <span className="text-amber-400">GC: ${Number(r.gasto_comun).toLocaleString('es-CL')}</span>}
                         {r.arriendo && <span className="text-emerald-400">Arr: ${Number(r.arriendo).toLocaleString('es-CL')}</span>}
@@ -202,7 +200,7 @@ const PanelEdificio = ({
                         </div>
                         <span className="text-[10px] text-slate-500">{new Date(r.creado_en).toLocaleDateString('es-CL')}</span>
                       </div>
-                      <button onClick={() => requerirAuth(() => handleDarUtil(r.id, r.util_count))} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${yaVotado ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}>
+                      <button onClick={() => requerirAuth(() => handleDarUtil(r.id, r.util_count))} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all ${yaVotado ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-white'}`}>
                         <ThumbsUp className={`w-3 h-3 ${yaVotado ? 'fill-white' : ''}`} /> {r.util_count || 0}
                       </button>
                     </div>
@@ -260,7 +258,16 @@ export default function App() {
   const [registroExitosoMsg, setRegistroExitosoMsg] = useState(false);
   const [recuperacionEnviada, setRecuperacionEnviada] = useState(false);
   const [archivoFoto, setArchivoFoto] = useState(null);
-  const [nuevaResena, setNuevaResena] = useState({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: 'Excelente conectividad al metro' });
+  
+  // Reseña unificada (comentario único y etiquetas diversificadas)
+  const [nuevaResena, setNuevaResena] = useState({ 
+    comentario: '', 
+    gasto_comun: '', 
+    arriendo: '', 
+    habitaciones: '1', 
+    etiqueta: '🚇 Excelente conectividad al metro' 
+  });
+
   const [correoAlerta, setCorreoAlerta] = useState('');
   const [archivoFotoRapida, setArchivoFotoRapida] = useState(null);
   const [nuevoEdificio, setNuevoEdificio] = useState({ nombre: '', direccion: '', comuna: 'Santiago Centro', latitud: '-33.4489', longitud: '-70.6693' });
@@ -368,10 +375,36 @@ export default function App() {
       const { error: uploadError } = await supabase.storage.from('fotos-edificios').upload(`resenas/${Math.random()}.${archivoFoto.name.split('.').pop()}`, archivoFoto);
       if (!uploadError) { const { data } = supabase.storage.from('fotos-edificios').getPublicUrl(`resenas/${Math.random()}.${archivoFoto.name.split('.').pop()}`); fotoUrl = data?.publicUrl || null; }
     }
-    const objetoResena = { edificio_id: edificioSeleccionado.id, titulo: nuevaResena.titulo, comentario: nuevaResena.comentario, nota_ruido: parseInt(nuevaResena.nota_ruido)||3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: parseInt(nuevaResena.nota_seguridad)||3, etiqueta: nuevaResena.etiqueta, url_imagen: fotoUrl, usuario_email: session.user.email, util_count: 0 };
-    if (incluirDatosEconomicos) { objetoResena.habitaciones = parseInt(nuevaResena.habitaciones)||1; objetoResena.gasto_comun = parseFloat(nuevaResena.gasto_comun)||null; objetoResena.arriendo = parseFloat(nuevaResena.arriendo)||null; }
+    
+    // Guardamos usando solo comentario unificado y la etiqueta seleccionada
+    const objetoResena = { 
+      edificio_id: edificioSeleccionado.id, 
+      titulo: nuevaResena.etiqueta, // Mantenemos compatibilidad con columna titulo usando la etiqueta
+      comentario: nuevaResena.comentario, 
+      nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, 
+      etiqueta: nuevaResena.etiqueta, 
+      url_imagen: fotoUrl, 
+      usuario_email: session.user.email, 
+      util_count: 0 
+    };
+
+    if (incluirDatosEconomicos) { 
+      objetoResena.habitaciones = parseInt(nuevaResena.habitaciones)||1; 
+      objetoResena.gasto_comun = parseFloat(nuevaResena.gasto_comun)||null; 
+      objetoResena.arriendo = parseFloat(nuevaResena.arriendo)||null; 
+    }
+    
     const { error } = await supabase.from('resenas').insert([objetoResena]);
-    if (!error) { setModalResenaAbierto(false); setArchivoFoto(null); setIncluirDatosEconomicos(false); setNuevaResena({ titulo: '', comentario: '', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: 'Excelente conectividad al metro' }); const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false }); setResenas(res.data || []); cargarEdificios(); mostrarAviso('¡Opinión publicada!'); }
+    if (!error) { 
+      setModalResenaAbierto(false); 
+      setArchivoFoto(null); 
+      setIncluirDatosEconomicos(false); 
+      setNuevaResena({ comentario: '', gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: '🚇 Excelente conectividad al metro' }); 
+      const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false }); 
+      setResenas(res.data || []); 
+      cargarEdificios(); 
+      mostrarAviso('¡Opinión publicada!'); 
+    }
     setEnviando(false);
   };
 
@@ -420,10 +453,9 @@ export default function App() {
         </div>
       )}
 
-      {/* ÁREA DE MAPA (Ocupa toda la pantalla en móvil, o se ajusta si hay panel abierto en PC) */}
       <div className="relative w-full h-full">
         
-        {/* HEADER FLOTANTE TÁCTIL OPTIMIZADO */}
+        {/* HEADER FLOTANTE */}
         <header className="absolute top-4 left-4 right-4 z-30 flex items-start justify-between gap-3 pointer-events-none">
           
           <div className="pointer-events-auto flex items-center gap-2 w-full max-w-md">
@@ -432,7 +464,7 @@ export default function App() {
              </div>
 
              <div className="relative w-full">
-               <div className="bg-[#09090b]/90 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-2xl flex items-center focus-within:border-indigo-500/50 transition-all">
+               <div className="bg-[#09090b]/90 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl shadow-2xl flex items-center focus-within:border-indigo-500 transition-all">
                  <Search className="w-4 h-4 text-slate-400 mr-2.5 flex-shrink-0" />
                  <input 
                    type="text" 
@@ -471,14 +503,14 @@ export default function App() {
           </div>
         </header>
 
-        {/* FILTROS FLOTANTES INFERIORES */}
+        {/* FILTROS FLOTANTES */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none w-full max-w-sm px-4">
           <div className="pointer-events-auto bg-[#09090b]/95 backdrop-blur-xl border border-white/10 p-1.5 rounded-full shadow-2xl flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-            <button onClick={() => setFiltroComuna('todas')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-white text-black' : 'text-slate-400'}`}>Todas</button>
-            <button onClick={() => setFiltroComuna('Santiago Centro')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Santiago Centro' ? 'bg-white text-black' : 'text-slate-400'}`}>Stgo Centro</button>
-            <button onClick={() => setFiltroComuna('Providencia')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Providencia' ? 'bg-white text-black' : 'text-slate-400'}`}>Providencia</button>
-            <button onClick={() => setFiltroRating(!filtroRating)} className={`px-3 py-2 rounded-full text-[11px] font-bold transition-all flex items-center gap-1 whitespace-nowrap ${filtroRating ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400'}`}>
-              <Star size={11} className={filtroRating ? 'fill-amber-400' : ''} /> 4.0+
+            <button onClick={() => setFiltroComuna('todas')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Todas</button>
+            <button onClick={() => setFiltroComuna('Santiago Centro')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Santiago Centro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Stgo Centro</button>
+            <button onClick={() => setFiltroComuna('Providencia')} className={`px-3.5 py-2 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Providencia' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}>Providencia</button>
+            <button onClick={() => setFiltroRating(!filtroRating)} className={`px-3 py-2 rounded-full text-[11px] font-bold transition-all flex items-center gap-1 whitespace-nowrap ${filtroRating ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400'}`}>
+              <Star size={11} className={filtroRating ? 'fill-white' : ''} /> 4.0+
             </button>
           </div>
         </div>
@@ -487,32 +519,18 @@ export default function App() {
         <MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
           <style>{`
             .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
-            .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-              background-color: #18181b !important;
-              color: #f8fafc !important;
-              border: 1px solid rgba(255,255,255,0.1) !important;
-            }
-            .leaflet-container a.leaflet-popup-close-button { color: #94a3b8 !important; }
-            .leaflet-popup-content { margin: 10px !important; }
           `}</style>
           
           <MapResizer edificioSeleccionado={edificioSeleccionado} />
           <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
           {edificiosFiltrados.map((edificio) => (
-            <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }}>
-              <Popup>
-                <div>
-                  <h4 className="font-bold text-xs text-white">{edificio.nombre}</h4>
-                  <div className="text-[10px] text-amber-500 font-bold mt-0.5">★ {edificio.calificacion_promedio || 'Sin notas'}</div>
-                </div>
-              </Popup>
-            </Marker>
+            <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }} />
           ))}
         </MapContainer>
       </div>
 
-      {/* PANEL LATERAL DE EDIFICIO */}
+      {/* PANEL LATERAL */}
       {edificioSeleccionado && (
          <PanelEdificio 
            edificio={edificioSeleccionado} 
@@ -538,7 +556,7 @@ export default function App() {
       {sidebarAbierto && (
         <div className="fixed inset-0 z-[99999] flex justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarAbierto(false)}></div>
-          <div className="relative w-full max-w-xs bg-[#09090b] h-full shadow-2xl border-l border-white/5 flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="relative w-full max-w-xs bg-[#09090b] h-full shadow-2xl border-l border-white/10 flex flex-col animate-in slide-in-from-right duration-300">
             <div className="p-5 pb-0 flex justify-between items-center">
               <h2 className="text-base font-black text-white">Mi Cuenta</h2>
               <button onClick={() => setSidebarAbierto(false)} className="p-2 hover:bg-white/10 rounded-full"><X className="w-5 h-5" /></button>
@@ -546,7 +564,7 @@ export default function App() {
             
             <div className="p-5 overflow-y-auto flex-1">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center font-black text-lg">
+                <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black text-lg">
                   {nombreUsuario ? nombreUsuario.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <div className="truncate">
@@ -556,33 +574,33 @@ export default function App() {
               </div>
 
               <div className="space-y-1.5 mb-6">
-                <button onClick={() => setVistaSidebar('perfil')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'perfil' ? 'bg-white/10 text-white' : 'text-slate-400'}`}><Settings className="w-4 h-4" /> Perfil</button>
-                <button onClick={() => setVistaSidebar('password')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'password' ? 'bg-white/10 text-white' : 'text-slate-400'}`}><KeyRound className="w-4 h-4" /> Seguridad</button>
-                <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'favoritos' ? 'bg-white/10 text-white' : 'text-slate-400'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
-                <button onClick={() => { setModalEdificioAbierto(true); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-indigo-400 bg-indigo-500/10"><Plus className="w-4 h-4" /> Nuevo Edificio</button>
-                {esAdmin && <button onClick={cargarAlertasAdmin} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-amber-500"><ShieldAlert className="w-4 h-4" /> Admin Leads</button>}
+                <button onClick={() => setVistaSidebar('perfil')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'perfil' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}><Settings className="w-4 h-4" /> Perfil</button>
+                <button onClick={() => setVistaSidebar('password')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'password' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}><KeyRound className="w-4 h-4" /> Seguridad</button>
+                <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold ${vistaSidebar === 'favoritos' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
+                <button onClick={() => { setModalEdificioAbierto(true); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-indigo-300 bg-indigo-600/20 border border-indigo-500/30"><Plus className="w-4 h-4" /> Nuevo Edificio</button>
+                {esAdmin && <button onClick={cargarAlertasAdmin} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-amber-400 bg-amber-500/10"><ShieldAlert className="w-4 h-4" /> Admin Leads</button>}
               </div>
 
               {vistaSidebar === 'perfil' && (
                 <div className="space-y-3">
-                  <input type="text" value={nombreUsuario} onChange={(e) => setNombreUsuario(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white" />
-                  <button onClick={() => mostrarAviso('¡Perfil actualizado!')} className="w-full bg-white text-black font-bold py-2.5 rounded-xl text-xs">Guardar</button>
+                  <input type="text" value={nombreUsuario} onChange={(e) => setNombreUsuario(e.target.value)} className="w-full bg-[#121216] border border-white/10 rounded-xl px-3.5 py-3 text-xs text-white" />
+                  <button onClick={() => mostrarAviso('¡Perfil actualizado!')} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-indigo-600/30">Guardar</button>
                 </div>
               )}
 
               {vistaSidebar === 'password' && (
                 <form onSubmit={handleCambiarPasswordSidebar} className="space-y-3">
-                  <input type="password" required minLength={6} placeholder="Nueva contraseña" value={nuevaPasswordSidebar} onChange={(e) => setNuevaPasswordSidebar(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white" />
-                  <button type="submit" className="w-full bg-white text-black font-bold py-2.5 rounded-xl text-xs">Actualizar</button>
+                  <input type="password" required minLength={6} placeholder="Nueva contraseña" value={nuevaPasswordSidebar} onChange={(e) => setNuevaPasswordSidebar(e.target.value)} className="w-full bg-[#121216] border border-white/10 rounded-xl px-3.5 py-3 text-xs text-white" />
+                  <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs shadow-lg shadow-indigo-600/30">Actualizar</button>
                 </form>
               )}
 
               {vistaSidebar === 'favoritos' && (
                 <div className="space-y-2">
                   {favoritos.length === 0 ? <p className="text-xs text-slate-500">Sin favoritos.</p> : edificios.filter(e => favoritos.includes(e.id)).map(ed => (
-                    <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setSidebarAbierto(false); }} className="bg-white/5 p-3 rounded-xl cursor-pointer">
+                    <div key={ed.id} onClick={() => { setEdificioSeleccionado(ed); setSidebarAbierto(false); }} className="bg-[#121216] border border-white/5 p-3 rounded-xl cursor-pointer">
                       <div className="font-bold text-white text-xs">{ed.nombre}</div>
-                      <div className="text-[10px] text-slate-400">{ed.comuna}</div>
+                      <div className="text-[10px] text-indigo-400">{ed.comuna}</div>
                     </div>
                   ))}
                 </div>
@@ -590,7 +608,7 @@ export default function App() {
             </div>
             
             <div className="p-5 border-t border-white/5">
-              <button onClick={handleCerrarSesion} className="w-full flex items-center justify-center gap-2 text-rose-500 font-bold py-2.5 rounded-xl text-xs bg-rose-500/10">
+              <button onClick={handleCerrarSesion} className="w-full flex items-center justify-center gap-2 text-rose-400 font-bold py-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/20">
                 <LogOut className="w-4 h-4" /> Cerrar Sesión
               </button>
             </div>
@@ -598,64 +616,87 @@ export default function App() {
         </div>
       )}
 
-      {/* MODALES TÁCTILES */}
+      {/* MODALES UNIFICADOS */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalAuthAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalAuthAbierto(false)}></div>
+          <div className="relative bg-[#121216] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl">
             <button onClick={() => setModalAuthAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
             
-            <div className="flex bg-black/50 p-1 rounded-xl mb-5">
-              <button onClick={() => setModoAuth('login')} className={`flex-1 py-2 text-xs font-bold rounded-lg ${modoAuth === 'login' ? 'bg-white text-black' : 'text-slate-400'}`}>Entrar</button>
-              <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2 text-xs font-bold rounded-lg ${modoAuth === 'registro' ? 'bg-white text-black' : 'text-slate-400'}`}>Registro</button>
+            <div className="flex bg-black/50 p-1 rounded-xl mb-5 border border-white/5">
+              <button onClick={() => setModoAuth('login')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modoAuth === 'login' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400'}`}>Entrar</button>
+              <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${modoAuth === 'registro' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400'}`}>Registro</button>
             </div>
 
             <form onSubmit={handleAuthSubmit} className="space-y-3.5">
-              {authError && <div className="p-2.5 bg-rose-500/10 text-rose-400 text-xs rounded-xl">{authError}</div>}
+              {authError && <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl">{authError}</div>}
               <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-black/50 border border-white/10 px-3.5 py-3 rounded-xl text-xs text-white" />
               <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-black/50 border border-white/10 px-3.5 py-3 rounded-xl text-xs text-white" />
-              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl text-xs mt-1">{modoAuth === 'login' ? 'Entrar' : 'Registrarse'}</button>
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs mt-1 shadow-lg shadow-indigo-600/30">{modoAuth === 'login' ? 'Entrar' : 'Registrarse'}</button>
             </form>
           </div>
         </div>
       )}
 
+      {/* MODAL RESEÑA MEJORADO (COMENTARIO ÚNICO + OPCIONES DIVERSIFICADAS) */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalResenaAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-sm p-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalResenaAbierto(false)}></div>
+          <div className="relative bg-[#121216] border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar">
             <button onClick={() => setModalResenaAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
-            <h3 className="text-base font-black text-white mb-1">Escribir Reseña</h3>
-            <p className="text-[11px] text-indigo-400 font-bold mb-4">{edificioSeleccionado?.nombre}</p>
+            <h3 className="text-base font-black text-white mb-1">Escribir Opinión Vecinal</h3>
+            <p className="text-xs text-indigo-400 font-bold mb-4">{edificioSeleccionado?.nombre}</p>
 
-            <form onSubmit={handleGuardarResena} className="space-y-3.5 text-xs">
-              <input type="text" required placeholder="Título (Ej: Muy tranquilo)" value={nuevaResena.titulo} onChange={(e) => setNuevaResena({...nuevaResena, titulo: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
-              <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white">
-                <option value="Excelente conectividad al metro" className="bg-[#18181b]">🚇 Excelente conectividad</option>
-                <option value="Ascensores rápidos y bien mantenidos" className="bg-[#18181b]">🛗 Ascensores rápidos</option>
-                <option value="Zona muy segura y tranquila" className="bg-[#18181b]">🛡️ Zona segura</option>
-                <option value="Problemas frecuentes con ruidos" className="bg-[#18181b]">🔊 Problemas con ruidos</option>
-              </select>
-              <textarea required rows="3" placeholder="Comentario..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white resize-none" />
+            <form onSubmit={handleGuardarResena} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1.5">Categoría / Aspecto principal</label>
+                <select value={nuevaResena.etiqueta} onChange={(e) => setNuevaResena({...nuevaResena, etiqueta: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none">
+                  <optgroup label="✨ Positivos / Destacados" className="bg-[#121216]">
+                    <option value="🚇 Excelente conectividad al metro">🚇 Excelente conectividad al metro</option>
+                    <option value="🛗 Ascensores rápidos y bien mantenidos">🛗 Ascensores rápidos y mantenidos</option>
+                    <option value="🛡️ Zona muy segura y tranquila">🛡️ Zona muy segura y tranquila</option>
+                    <option value="🔊 Edificio silencioso y de buena aislación">🔊 Edificio silencioso y tranquilo</option>
+                    <option value="💰 Gastos comunes bajos y estables">💰 Gastos comunes bajos y estables</option>
+                  </optgroup>
+                  <optgroup label="⚠️ Negativos / Advertencias" className="bg-[#121216]">
+                    <option value="🚇 Mala conectividad / Lejos del metro">🚇 Mala conectividad / Lejos del metro</option>
+                    <option value="🛗 Ascensores lentos o siempre rotos">🛗 Ascensores lentos o siempre rotos</option>
+                    <option value="⚠️ Zona insegura / Portonazos frecuentes">⚠️ Zona insegura / Portonazos frecuentes</option>
+                    <option value="🔊 Ruidos molestos / Mala aislación acústica">🔊 Ruidos molestos / Mala aislación acústica</option>
+                    <option value="💰 Gastos comunes altísimos e injustificados">💰 Gastos comunes altísimos</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1.5">Tu Comentario</label>
+                <textarea required rows="4" placeholder="Cuéntanos los detalles de tu experiencia..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white resize-none outline-none focus:border-indigo-500" />
+              </div>
               
-              <div className="bg-white/5 p-3 rounded-xl">
+              <div className="bg-white/5 p-3.5 rounded-xl border border-white/5">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="font-bold">💰 Costos (Opcional)</span>
-                  <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-4 h-4 accent-indigo-500" />
+                  <span className="font-bold text-slate-200">💰 ¿Agregar costos reales?</span>
+                  <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-4 h-4 accent-indigo-600 rounded" />
                 </label>
                 {incluirDatosEconomicos && (
-                  <div className="grid grid-cols-3 gap-2 mt-3">
-                    <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px]">
-                      <option value="1">1 D</option><option value="2">2 D</option><option value="3">3 D</option>
+                  <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
+                    <select value={nuevaResena.habitaciones} onChange={(e) => setNuevaResena({...nuevaResena, habitaciones: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px] text-white">
+                      <option value="1">1 Dorm</option><option value="2">2 Dorm</option><option value="3">3 Dorm</option><option value="4">4+ Dorm</option>
                     </select>
-                    <input type="number" placeholder="GC ($)" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px]" />
-                    <input type="number" placeholder="Arriendo" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px]" />
+                    <input type="number" placeholder="GC ($)" value={nuevaResena.gasto_comun} onChange={(e) => setNuevaResena({...nuevaResena, gasto_comun: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px] text-white" />
+                    <input type="number" placeholder="Arriendo" value={nuevaResena.arriendo} onChange={(e) => setNuevaResena({...nuevaResena, arriendo: e.target.value})} className="bg-black/50 border border-white/10 p-2 rounded-lg text-[10px] text-white" />
                   </div>
                 )}
               </div>
 
-              <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-[11px] text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white" />
-              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl mt-1">Publicar</button>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 mb-1">Foto o Comprobante (Opcional)</label>
+                <input type="file" accept="image/*" onChange={(e) => setArchivoFoto(e.target.files[0])} className="w-full text-[11px] text-slate-400 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-600/20 file:text-indigo-400 file:font-bold cursor-pointer" />
+              </div>
+
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 transition-all mt-2">
+                {enviando ? 'Publicando...' : 'Publicar Opinión'}
+              </button>
             </form>
           </div>
         </div>
@@ -663,21 +704,21 @@ export default function App() {
 
       {modalEdificioAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalEdificioAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-5 shadow-2xl">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalEdificioAbierto(false)}></div>
+          <div className="relative bg-[#121216] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl">
             <button onClick={() => setModalEdificioAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
             <h3 className="text-base font-black text-white mb-4">Nuevo Edificio</h3>
             
             <form onSubmit={handleGuardarEdificio} className="space-y-3.5 text-xs">
-              <input type="text" required placeholder="Nombre (Ej: Edificio Parque)" value={nuevoEdificio.nombre} onChange={(e) => setNuevoEdificio({...nuevoEdificio, nombre: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
-              <input type="text" required placeholder="Dirección exacta" value={nuevoEdificio.direccion} onChange={(e) => setNuevoEdificio({...nuevoEdificio, direccion: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
-              <select value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white">
-                <option value="Santiago Centro" className="bg-[#18181b]">Santiago Centro</option>
-                <option value="Providencia" className="bg-[#18181b]">Providencia</option>
-                <option value="Ñuñoa" className="bg-[#18181b]">Ñuñoa</option>
-                <option value="Las Condes" className="bg-[#18181b]">Las Condes</option>
+              <input type="text" required placeholder="Nombre (Ej: Edificio Parque)" value={nuevoEdificio.nombre} onChange={(e) => setNuevoEdificio({...nuevoEdificio, nombre: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none" />
+              <input type="text" required placeholder="Dirección exacta" value={nuevoEdificio.direccion} onChange={(e) => setNuevoEdificio({...nuevoEdificio, direccion: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none" />
+              <select value={nuevoEdificio.comuna} onChange={(e) => setNuevoEdificio({...nuevoEdificio, comuna: e.target.value})} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none">
+                <option value="Santiago Centro" className="bg-[#121216]">Santiago Centro</option>
+                <option value="Providencia" className="bg-[#121216]">Providencia</option>
+                <option value="Ñuñoa" className="bg-[#121216]">Ñuñoa</option>
+                <option value="Las Condes" className="bg-[#121216]">Las Condes</option>
               </select>
-              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl mt-1">Crear Edificio</button>
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl mt-1 shadow-lg shadow-indigo-600/30">Crear Edificio</button>
             </form>
           </div>
         </div>
@@ -685,14 +726,14 @@ export default function App() {
 
       {modalAlertaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalAlertaAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-5 shadow-2xl">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalAlertaAbierto(false)}></div>
+          <div className="relative bg-[#121216] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl">
             <button onClick={() => setModalAlertaAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
             <h3 className="text-base font-black text-white mb-1">Alerta de Arriendo</h3>
             <p className="text-xs text-slate-400 mb-4">Te avisaremos si hay disponibilidad en este edificio.</p>
             <form onSubmit={handleGuardarAlerta} className="space-y-3.5 text-xs">
-              <input type="email" required placeholder="tu@email.com" value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white" />
-              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl">Confirmar</button>
+              <input type="email" required placeholder="tu@email.com" value={correoAlerta} onChange={(e) => setCorreoAlerta(e.target.value)} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none" />
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30">Confirmar</button>
             </form>
           </div>
         </div>
@@ -700,13 +741,13 @@ export default function App() {
 
       {modalFotoAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModalFotoAbierto(false)}></div>
-          <div className="relative bg-[#18181b] border border-white/10 rounded-3xl w-full max-w-xs p-5 shadow-2xl">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalFotoAbierto(false)}></div>
+          <div className="relative bg-[#121216] border border-white/10 rounded-3xl w-full max-w-xs p-6 shadow-2xl">
             <button onClick={() => setModalFotoAbierto(false)} className="absolute top-4 right-4 text-slate-400"><X className="w-5 h-5" /></button>
-            <h3 className="text-base font-black text-white mb-2">Aportar Foto</h3>
+            <h3 className="text-base font-black text-white mb-3">Aportar Foto</h3>
             <form onSubmit={handleGuardarFotoRapida} className="space-y-3.5 text-xs">
-              <input type="file" accept="image/*" required onChange={(e) => setArchivoFotoRapida(e.target.files[0])} className="w-full text-slate-400 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white" />
-              <button type="submit" className="w-full bg-white text-black font-bold py-3 rounded-xl">Subir</button>
+              <input type="file" accept="image/*" required onChange={(e) => setArchivoFotoRapida(e.target.files[0])} className="w-full text-slate-400 file:py-2.5 file:px-3.5 file:rounded-xl file:border-0 file:bg-indigo-600/20 file:text-indigo-400 file:font-bold cursor-pointer" />
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30">Subir Foto</button>
             </form>
           </div>
         </div>
