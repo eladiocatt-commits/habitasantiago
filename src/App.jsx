@@ -461,10 +461,19 @@ export default function App() {
         </div>
 
         {/* MAPA */}
-        <MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
+<MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
+          <style>{`
+            .leaflet-tile-pane {
+              filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+            }
+          `}</style>
           <MapResizer edificioSeleccionado={edificioSeleccionado} />
-          {/* Se utiliza un TileLayer oscuro premium de CartoDB (gratis y hermoso para modo oscuro) */}
-          <TileLayer attribution='&copy; OpenStreetMap &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+          
+          <TileLayer 
+            attribution='&copy; OpenStreetMap' 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+          />
+          
           {edificiosFiltrados.map((edificio) => (
             <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }}>
               <Popup className="premium-popup">
