@@ -42,16 +42,15 @@ function MapResizer({ edificioSeleccionado }) {
   }, [map, edificioSeleccionado]);
   return null;
 }
+
 const LeafletClusterGroup = createPathComponent(({ children, ...options }, ctx) => {
   const clusterGroup = L.markerClusterGroup(options);
-  
   Object.keys(options).forEach((prop) => {
     if (prop.startsWith('on')) {
       const event = prop.replace('on', '').toLowerCase();
       clusterGroup.on(event, options[prop]);
     }
   });
-
   return {
     instance: clusterGroup,
     context: { ...ctx, layerContainer: clusterGroup },
@@ -73,15 +72,13 @@ const PanelEdificio = ({
   };
   const fotoFinal = fotoResena || fotosPorComuna[edificio.comuna] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80';
 
-  const { promedioGasto, promediosArriendoPorHab } = promedios;
+  const { promedioGasto, promediosArriendoPorHab, calificacionPromedio } = promedios;
   
-  // Estado local para el selector interactivo de habitaciones en la cabecera
   const habitacionesDisponibles = Object.keys(promediosArriendoPorHab);
   const [habSeleccionada, setHabSeleccionada] = React.useState(
     habitacionesDisponibles.length > 0 ? habitacionesDisponibles[0] : '1'
   );
 
-  // Actualizar si cambian las reseñas del edificio
   React.useEffect(() => {
     if (habitacionesDisponibles.length > 0 && !habitacionesDisponibles.includes(habSeleccionada)) {
       setHabSeleccionada(habitacionesDisponibles[0]);
@@ -97,7 +94,6 @@ const PanelEdificio = ({
   return (
     <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto w-full md:w-[500px] bg-[#09090b] shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-bottom md:slide-in-from-right duration-300">
       
-      {/* CABECERA CON DATOS FINANCIEROS INTERACTIVOS */}
       <div className="relative h-72 md:h-80 w-full flex-shrink-0 bg-[#09090b]">
         <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/50 to-transparent"></div>
@@ -124,16 +120,12 @@ const PanelEdificio = ({
             </p>
           </div>
 
-          {/* CAJAS FINANCIERAS SUPERIORES (GC + ARRIENDO INTERACTIVO) */}
           <div className="grid grid-cols-2 gap-2.5">
-            
-            {/* Gasto Común */}
             <div className="bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-2xl flex flex-col justify-center">
               <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Gasto Común Prom.</p>
               <p className="text-sm md:text-base font-black text-amber-400">{promedioGasto}</p>
             </div>
 
-            {/* Arriendo Interactivo por Tipología */}
             <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-3 rounded-2xl flex flex-col justify-between">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Arriendo Prom.</span>
@@ -153,15 +145,11 @@ const PanelEdificio = ({
               </div>
               <p className="text-sm md:text-base font-black text-emerald-400">{arriendoActual}</p>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* CUERPO PRINCIPAL CON LAS RESEÑAS */}
       <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-28 no-scrollbar bg-[#09090b]">
-        
-        {/* Acciones principales */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
             <MessageSquare className="w-5 h-5" />
@@ -173,7 +161,6 @@ const PanelEdificio = ({
           </button>
         </div>
 
-        {/* Reseñas Vecinales */}
         <div>
           <div className="flex items-center justify-between mb-4 pl-1">
              <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -181,7 +168,7 @@ const PanelEdificio = ({
              </h3>
              <div className="flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-full">
                <Star className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
-               <span className="text-[11px] font-bold text-indigo-400">{edificio.calificacion_promedio || 'N/A'}</span>
+               <span className="text-[11px] font-bold text-indigo-400">{calificacionPromedio}</span>
              </div>
           </div>
 
@@ -201,6 +188,15 @@ const PanelEdificio = ({
                 const esMia = session?.user?.email === r.usuario_email;
                 return (
                   <div key={r.id} className="bg-[#141417] p-5 rounded-3xl relative">
+                    <div className="flex items-center gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star 
+                          key={s} 
+                          className={`w-3.5 h-3.5 ${s <= (r.calificacion || 5) ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`} 
+                        />
+                      ))}
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                       {r.es_verificado && (
                         <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
@@ -295,15 +291,14 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [registroExitosoMsg, setRegistroExitosoMsg] = useState(false);
-  const [recuperacionEnviada, setRecuperacionEnviada] = useState(false);
-  const [archivoFoto, setArchivoFoto] = useState(null);
   
   const [nuevaResena, setNuevaResena] = useState({ 
     comentario: '', 
     gasto_comun: '', 
     arriendo: '', 
     habitaciones: '1', 
-    etiqueta: '🚇 Excelente conectividad al metro' 
+    etiqueta: '🚇 Excelente conectividad al metro',
+    calificacion: 5 
   });
   
   const opcionesEtiquetas = [
@@ -317,7 +312,6 @@ export default function App() {
   const comunasOpciones = ['Santiago Centro', 'Providencia', 'Ñuñoa', 'Las Condes'];
 
   const [correoAlerta, setCorreoAlerta] = useState('');
-  const [archivoFotoRapida, setArchivoFotoRapida] = useState(null);
   const [nuevoEdificio, setNuevoEdificio] = useState({ nombre: '', direccion: '', comuna: 'Santiago Centro', latitud: '-33.4489', longitud: '-70.6693' });
 
   const mostrarAviso = (texto, tipo = 'success') => { setMensajeNotificacion({ texto, tipo }); setTimeout(() => setMensajeNotificacion(null), 4000); };
@@ -409,6 +403,13 @@ export default function App() {
   };
 
   const calcularPromediosEdificio = () => {
+    const resenasConNota = resenas.filter(r => r.calificacion && Number(r.calificacion) > 0);
+    let calificacionPromedio = 'N/A';
+    if (resenasConNota.length > 0) {
+      const sumaNotas = resenasConNota.reduce((acc, curr) => acc + Number(curr.calificacion), 0);
+      calificacionPromedio = (sumaNotas / resenasConNota.length).toFixed(1);
+    }
+
     const resenasConGastos = resenas.filter(r => r.gasto_comun && Number(r.gasto_comun) > 0);
     const resenasConArriendo = resenas.filter(r => r.arriendo && Number(r.arriendo) > 0);
     let promedioGasto = 'Sin datos';
@@ -427,13 +428,11 @@ export default function App() {
       const lista = arriendosPorHab[hab];
       promediosArriendoPorHab[hab] = `$${Math.round(lista.reduce((a, b) => a + b, 0) / lista.length).toLocaleString('es-CL')}`;
     });
-    return { promedioGasto, promediosArriendoPorHab };
+    return { promedioGasto, promediosArriendoPorHab, calificacionPromedio };
   };
 
   const handleAuthSubmit = async (e) => {
-    e.preventDefault(); 
-    setEnviando(true); 
-    setAuthError('');
+    e.preventDefault(); setEnviando(true); setAuthError('');
     if (modoAuth === 'registro') { 
       const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword, options: { emailRedirectTo: window.location.origin } }); 
       if (error) setAuthError(error.message); else setRegistroExitosoMsg(true); 
@@ -442,10 +441,6 @@ export default function App() {
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword }); 
       if (error) setAuthError('Correo o contraseña incorrectos. Inténtalo de nuevo.'); 
       else { setModalAuthAbierto(false); mostrarAviso('¡Bienvenido de vuelta!'); } 
-    } 
-    else if (modoAuth === 'recuperar') { 
-      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: window.location.origin }); 
-      if (error) setAuthError(error.message); else setRecuperacionEnviada(true); 
     }
     setEnviando(false);
   };
@@ -471,6 +466,7 @@ export default function App() {
       edificio_id: edificioSeleccionado.id, 
       titulo: nuevaResena.etiqueta,
       comentario: nuevaResena.comentario, 
+      calificacion: parseInt(nuevaResena.calificacion) || 5,
       nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, 
       etiqueta: nuevaResena.etiqueta, 
       doc_verificacion_url: docUrl,
@@ -490,7 +486,7 @@ export default function App() {
       setModalResenaAbierto(false); 
       setArchivoDocVerificacion(null);
       setIncluirDatosEconomicos(false); 
-      setNuevaResena({ comentario: '', gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: '🚇 Excelente conectividad al metro' }); 
+      setNuevaResena({ comentario: '', gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: '🚇 Excelente conectividad al metro', calificacion: 5 }); 
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false }); 
       setResenas(res.data || []); 
       cargarEdificios(); 
@@ -513,7 +509,7 @@ export default function App() {
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || e.comuna.toLowerCase().includes(busqueda.toLowerCase()) || e.direccion.toLowerCase().includes(busqueda.toLowerCase());
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
-    const matchRating = !filtroRating || (e.calificacion_promedio >= 4.0);
+    const matchRating = !filtroRating || (Number(e.calificacion_promedio) >= 4.0);
     return matchTexto && matchComuna && matchRating;
   });
 
@@ -537,10 +533,7 @@ export default function App() {
       )}
 
       <div className="relative w-full h-full">
-        
-        {/* HEADER FLOTANTE TÁCTIL */}
         <header className="absolute top-5 left-5 right-5 z-30 flex items-start justify-between gap-4 pointer-events-none">
-          
           <div className="pointer-events-auto flex items-center gap-3 w-full max-w-md">
              <div onClick={resetearApp} className="bg-[#09090b]/40 backdrop-blur-2xl p-3.5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.3)] flex items-center justify-center cursor-pointer active:scale-95 transition-all">
                <Building className="w-5 h-5 text-indigo-400" />
@@ -586,7 +579,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* FILTROS FLOTANTES INFERIORES */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none w-full max-w-sm px-4">
           <div className="pointer-events-auto bg-[#09090b]/60 backdrop-blur-2xl p-1.5 rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
             <button onClick={() => setFiltroComuna('todas')} className={`px-4 py-2.5 rounded-2xl text-[10px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Todas</button>
@@ -598,15 +590,12 @@ export default function App() {
           </div>
         </div>
 
-        {/* MAPA Y PINES */}
         <MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
           <style>{`
             .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
           `}</style>
-
           <MapResizer edificioSeleccionado={edificioSeleccionado} />
           <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
           <LeafletClusterGroup>
             {edificiosFiltrados.map((edificio) => (
               <Marker 
@@ -654,7 +643,6 @@ export default function App() {
          />
       )}
 
-      {/* MENÚ LATERAL (CON BOTÓN DE ADMIN SI ES TU CORREO) */}
       {sidebarAbierto && (
         <div className="fixed inset-0 z-[99999] flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setSidebarAbierto(false)}></div>
@@ -713,7 +701,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL RESEÑA (CON VERIFICACIÓN OPCIONAL Y AVISO DE PRIVACIDAD) */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center md:px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalResenaAbierto(false)}></div>
@@ -724,6 +711,27 @@ export default function App() {
 
             <form onSubmit={handleGuardarResena} className="space-y-6">
               
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Calificación General</label>
+                <div className="flex items-center gap-2 bg-[#1a1a1f] p-4 rounded-2xl">
+                  {[1, 2, 3, 4, 5].map((estrella) => (
+                    <button
+                      key={estrella}
+                      type="button"
+                      onClick={() => setNuevaResena({...nuevaResena, calificacion: estrella})}
+                      className="focus:outline-none transition-transform active:scale-95"
+                    >
+                      <Star 
+                        className={`w-6 h-6 ${estrella <= nuevaResena.calificacion ? 'text-amber-400 fill-amber-400' : 'text-slate-600'}`} 
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-auto text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl">
+                    {nuevaResena.calificacion}.0 Estrellas
+                  </span>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-500 mb-3 uppercase tracking-wider">Aspecto Principal</label>
                 <div className="flex flex-wrap gap-2">
@@ -749,7 +757,6 @@ export default function App() {
                 <textarea required rows="3" placeholder="Ej: Me mudé hace 6 meses y la verdad es que..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full bg-[#1a1a1f] p-4 rounded-2xl text-xs text-white resize-none outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium placeholder:text-slate-600" />
               </div>
               
-              {/* SECCIÓN OBTENER INSIGNIA VECINO VERIFICADO */}
               <div className="bg-[#1a1a1f] p-5 rounded-3xl space-y-3 border border-emerald-500/10">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -807,7 +814,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL ADMIN: REVISAR VERIFICACIONES PENDIENTES */}
       {modalAdminAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAdminAbierto(false)}></div>
@@ -857,7 +863,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL NUEVO EDIFICIO */}
       {modalEdificioAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalEdificioAbierto(false)}></div>
@@ -886,7 +891,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL AUTH */}
       {modalAuthAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAuthAbierto(false)}></div>
@@ -898,7 +902,6 @@ export default function App() {
               <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'registro' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Registro</button>
             </div>
 
-            {/* SUB-MODAL PARA TEXTOS LEGALES */}
             {modalLegalInfo ? (
               <div className="space-y-4 animate-in fade-in duration-200">
                 <h4 className="text-sm font-black text-white">{modalLegalInfo.titulo}</h4>
@@ -916,29 +919,25 @@ export default function App() {
               </div>
             ) : (
               <form onSubmit={handleAuthSubmit} className="space-y-3">
-                
-                {/* AQUI ESTÁ EL MENSAJE DE ERROR CORREGIDO */}
                 {authError && (
                   <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-2xl text-[11px] font-bold flex items-center gap-2 animate-in fade-in">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     {authError}
                   </div>
                 )}
-
                 <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
                 <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
                 
-                {/* CHECKBOX OBLIGATORIO EN REGISTRO */}
                 {modoAuth === 'registro' && (
                   <div className="flex items-start gap-2 pt-2">
                     <input type="checkbox" required className="mt-0.5 accent-indigo-600 rounded cursor-pointer" />
                     <label className="text-[10px] text-slate-400 leading-tight">
                       Acepto los <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
                         titulo: 'Términos y Condiciones',
-                        texto: '1. HabitaSantiago es una comunidad colaborativa e informativa para compartir experiencias residenciales.\n\n2. Te comprometes a publicar información respetuosa, verídica y basada en experiencias reales.\n\n3. Nos reservamos el derecho de eliminar contenido ofensivo, falso o cuentas que incumplan estas normas para mantener una sana convivencia.'
+                        texto: '1. HabitaSantiago es una comunidad colaborativa e informativa para compartir experiencias residenciales.\n\n2. Te comprometes a publicar información respetuosa, verídica y basada en experiencias reales.'
                       })}>Términos y Condiciones</span> y la <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
                         titulo: 'Política de Privacidad',
-                        texto: '1. Almacenamos únicamente tu correo electrónico para la autenticación y notificaciones de la plataforma.\n\n2. Los documentos o boletas subidos para la insignia de Vecino Verificado se revisan de forma privada y segura.\n\n3. Tus datos personales jamás serán vendidos ni compartidos con terceros con fines comerciales.'
+                        texto: '1. Almacenamos únicamente tu correo electrónico para la autenticación y notificaciones de la plataforma.'
                       })}>Política de Privacidad</span>.
                     </label>
                   </div>
