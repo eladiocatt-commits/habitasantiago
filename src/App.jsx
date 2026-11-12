@@ -90,19 +90,19 @@ const PanelEdificio = ({
 
       <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-28 no-scrollbar bg-[#09090b]">
         
-        {/* Acciones */}
+        {/* Acciones principales con capitalización unificada */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
             <MessageSquare className="w-5 h-5" />
-            <span className="text-[11px] font-bold tracking-wide uppercase">Dar Opinión</span>
+            <span className="text-xs font-bold tracking-wide">Dar Opinión</span>
           </button>
           <button onClick={() => abrirModalFoto()} className="flex flex-col items-center justify-center gap-2 bg-[#141417] hover:bg-[#1a1a1f] text-white py-4 px-4 rounded-3xl transition-all active:scale-95">
             <Camera className="w-5 h-5 text-slate-400" />
-            <span className="text-[11px] font-bold tracking-wide uppercase text-slate-400">Aportar Foto</span>
+            <span className="text-xs font-bold tracking-wide text-slate-400">Aportar Foto</span>
           </button>
         </div>
 
-        {/* Info Financiera con Estados Vacíos Reales */}
+        {/* Data Financiera */}
         <div className="space-y-4 mb-10">
           <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1">Data Financiera</h3>
           
@@ -146,7 +146,7 @@ const PanelEdificio = ({
           </div>
         </div>
 
-        {/* Panel Reseñas */}
+        {/* Reseñas Vecinales */}
         <div>
           <div className="flex items-center justify-between mb-5 pl-1">
              <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Reseñas Vecinales</h3>
@@ -259,7 +259,6 @@ export default function App() {
   const [recuperacionEnviada, setRecuperacionEnviada] = useState(false);
   const [archivoFoto, setArchivoFoto] = useState(null);
   
-  // Reseña Unificada (Sin Selects)
   const [nuevaResena, setNuevaResena] = useState({ 
     comentario: '', 
     gasto_comun: '', 
@@ -464,7 +463,7 @@ export default function App() {
 
       <div className="relative w-full h-full">
         
-        {/* HEADER FLOTANTE TÁCTIL (MÁS GLASSMORPHISM, SIN BORDES FEOS) */}
+        {/* HEADER FLOTANTE TÁCTIL */}
         <header className="absolute top-5 left-5 right-5 z-30 flex items-start justify-between gap-4 pointer-events-none">
           
           <div className="pointer-events-auto flex items-center gap-3 w-full max-w-md">
@@ -516,7 +515,7 @@ export default function App() {
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none w-full max-w-sm px-4">
           <div className="pointer-events-auto bg-[#09090b]/60 backdrop-blur-2xl p-1.5 rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
             <button onClick={() => setFiltroComuna('todas')} className={`px-4 py-2.5 rounded-2xl text-[10px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'todas' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Todas</button>
-            <button onClick={() => setFiltroComuna('Santiago Centro')} className={`px-4 py-2.5 rounded-2xl text-[10px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Santiago Centro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Centro</button>
+            <button onClick={() => setFiltroComuna('Santiago Centro')} className={`px-4 py-2.5 rounded-2xl text-[10px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Santiago Centro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Stgo Centro</button>
             <button onClick={() => setFiltroComuna('Providencia')} className={`px-4 py-2.5 rounded-2xl text-[10px] font-bold transition-all whitespace-nowrap ${filtroComuna === 'Providencia' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>Providencia</button>
             <button onClick={() => setFiltroRating(!filtroRating)} className={`px-3 py-2.5 rounded-2xl text-[10px] font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${filtroRating ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:bg-white/5'}`}>
               <Star size={12} className={filtroRating ? 'fill-white' : ''} /> 4.0+
@@ -560,7 +559,7 @@ export default function App() {
          />
       )}
 
-      {/* MENÚ LATERAL (Limpieza de bordes) */}
+      {/* MENÚ LATERAL */}
       {sidebarAbierto && (
         <div className="fixed inset-0 z-[99999] flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setSidebarAbierto(false)}></div>
@@ -612,7 +611,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL RESEÑA PREMIUM (SIN SELECTS, CON CHIPS) */}
+      {/* MODAL RESEÑA */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center md:px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalResenaAbierto(false)}></div>
@@ -623,7 +622,6 @@ export default function App() {
 
             <form onSubmit={handleGuardarResena} className="space-y-6">
               
-              {/* CHIPS EN VEZ DE SELECT PARA ETIQUETAS */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-500 mb-3 uppercase tracking-wider">Aspecto Principal</label>
                 <div className="flex flex-wrap gap-2">
@@ -657,7 +655,6 @@ export default function App() {
                 {incluirDatosEconomicos && (
                   <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
                     
-                    {/* CHIPS EN VEZ DE SELECT PARA HABITACIONES */}
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 mb-2">Dormitorios</label>
                       <div className="flex gap-2">
@@ -691,7 +688,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL NUEVO EDIFICIO (SIN SELECTS, CON CHIPS) */}
+      {/* MODAL NUEVO EDIFICIO */}
       {modalEdificioAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalEdificioAbierto(false)}></div>
