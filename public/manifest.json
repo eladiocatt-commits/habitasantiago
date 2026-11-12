@@ -1,0 +1,17 @@
+{
+  "name": "HabitaSantiago",
+  "short_name": "HabitaSantiago",
+  "description": "Reseñas y búsqueda de edificios en Santiago",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3D2376",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
