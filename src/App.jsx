@@ -828,7 +828,7 @@ export default function App() {
       {modalAuthAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAuthAbierto(false)}></div>
-          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-xs p-6 shadow-2xl">
+          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-sm p-6 shadow-2xl">
             <button onClick={() => setModalAuthAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
             
             <div className="flex bg-[#09090b] p-1.5 rounded-2xl mb-6">
@@ -839,12 +839,24 @@ export default function App() {
             <form onSubmit={handleAuthSubmit} className="space-y-3">
               <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
               <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
-              <button type="submit" className="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-2xl text-xs mt-2 shadow-lg shadow-indigo-600/30">{modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarse'}</button>
+              
+              {/* CHECKBOX OBLIGATORIO EN REGISTRO */}
+              {modoAuth === 'registro' && (
+                <div className="flex items-start gap-2 pt-2">
+                  <input type="checkbox" required className="mt-0.5 accent-indigo-600 rounded cursor-pointer" />
+                  <label className="text-[10px] text-slate-400 leading-tight">
+                    Acepto los <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => alert("Términos y Condiciones:\n\n1. HabitaSantiago es una comunidad colaborativa.\n2. Debes publicar información respetuosa y basada en experiencias reales.\n3. Nos reservamos el derecho de eliminar contenido falso.")}>Términos y Condiciones</span> y la <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => alert("Política de Privacidad:\n\n1. Solo usamos tu correo para autenticación.\n2. Tus documentos de verificación son privados y jamás se venden o comparten a terceros.")}>Política de Privacidad</span>.
+                  </label>
+                </div>
+              )}
+
+              <button type="submit" className="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-2xl text-xs mt-2 shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
+                {modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarse'}
+              </button>
             </form>
           </div>
-        </div>
-      )}
-
+        </div> 
+        
       {modalAlertaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAlertaAbierto(false)}></div>
