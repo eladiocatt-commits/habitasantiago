@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare, ShieldCheck, FileText, Check, Ban
 } from 'lucide-react';
 
 const modernIcon = L.divIcon({
@@ -55,7 +55,6 @@ const PanelEdificio = ({
   const fotoFinal = fotoResena || fotosPorComuna[edificio.comuna] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80';
 
   const { promedioGasto, promediosArriendoPorHab } = promedios;
-  const fotosComunidad = resenas.filter(r => r.url_imagen);
 
   const requerirAuth = (accion) => {
     if (!session) { setModoAuth('login'); setModalAuthAbierto(true); } else { accion(); }
@@ -90,7 +89,7 @@ const PanelEdificio = ({
 
       <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-28 no-scrollbar bg-[#09090b]">
         
-        {/* Acciones principales con capitalización unificada */}
+        {/* Acciones principales */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
             <MessageSquare className="w-5 h-5" />
@@ -171,10 +170,15 @@ const PanelEdificio = ({
                 const yaVotado = likesUsuario.includes(r.id);
                 const esMia = session?.user?.email === r.usuario_email;
                 return (
-                  <div key={r.id} className="bg-[#141417] p-5 rounded-3xl">
-                    <div className="flex justify-between items-start mb-3">
+                  <div key={r.id} className="bg-[#141417] p-5 rounded-3xl relative">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                      {r.es_verificado && (
+                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Vecino Verificado
+                        </span>
+                      )}
                       {r.etiqueta && (
-                        <span className={`inline-block text-[10px] font-bold px-3 py-1.5 rounded-full ${r.etiqueta.includes('Mala') || r.etiqueta.includes('lentos') || r.etiqueta.includes('insegura') || r.etiqueta.includes('Ruidos') || r.etiqueta.includes('altísimos') ? 'bg-rose-500/10 text-rose-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                        <span className={`inline-block text-[10px] font-bold px-3 py-1 rounded-full ${r.etiqueta.includes('Mala') || r.etiqueta.includes('lentos') || r.etiqueta.includes('insegura') || r.etiqueta.includes('Ruidos') || r.etiqueta.includes('altísimos') ? 'bg-rose-500/10 text-rose-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
                           {r.etiqueta}
                         </span>
                       )}
@@ -184,6 +188,7 @@ const PanelEdificio = ({
                         </button>
                       )}
                     </div>
+                    
                     <p className="text-xs text-slate-200 leading-relaxed mb-4 whitespace-pre-wrap font-medium">{r.comentario}</p>
                     
                     {(r.habitaciones || r.gasto_comun || r.arriendo) && (
@@ -251,7 +256,9 @@ export default function App() {
   const [incluirDatosEconomicos, setIncluirDatosEconomicos] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
 
-  const [listaAlertas, setListaAlertas] = useState([]);
+  const [listaVerificaciones, setListaVerificaciones] = useState([]);
+  const [archivoDocVerificacion, setArchivoDocVerificacion] = useState(null);
+
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -339,9 +346,35 @@ export default function App() {
     if (!error) { setResenas(resenas.filter(r => r.id !== resenaId)); cargarEdificios(); mostrarAviso('Reseña eliminada.'); }
   };
 
-  const cargarAlertasAdmin = async () => {
-    const { data, error } = await supabase.from('alertas_arriendo').select('*, edificios(nombre, comuna)').order('creado_en', { ascending: false });
-    if (!error) { setListaAlertas(data || []); setModalAdminAbierto(true); }
+  // Cargar lista de solicitudes de verificación pendientes (Exclusivo Admin)
+  const cargarVerificacionesAdmin = async () => {
+    const { data, error } = await supabase
+      .from('resenas')
+      .select('*, edificios(nombre, comuna)')
+      .not('doc_verificacion_url', 'is', null)
+      .eq('es_verificado', false)
+      .order('creado_en', { ascending: false });
+      
+    if (!error) {
+      setListaVerificaciones(data || []);
+      setModalAdminAbierto(true);
+    }
+  };
+
+  const responderVerificacion = async (resenaId, aprobar) => {
+    const { error } = await supabase
+      .from('resenas')
+      .update({ es_verificado: aprobar })
+      .eq('id', resenaId);
+
+    if (!error) {
+      setListaVerificaciones(listaVerificaciones.filter(v => v.id !== resenaId));
+      mostrarAviso(aprobar ? '¡Vecino Verificado aprobado!' : 'Solicitud rechazada');
+      if (edificioSeleccionado) {
+        const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false });
+        setResenas(res.data || []);
+      }
+    }
   };
 
   const calcularPromediosEdificio = () => {
@@ -379,10 +412,16 @@ export default function App() {
 
   const handleGuardarResena = async (e) => {
     e.preventDefault(); if (!edificioSeleccionado || !session) return; setEnviando(true);
-    let fotoUrl = null;
-    if (archivoFoto) {
-      const { error: uploadError } = await supabase.storage.from('fotos-edificios').upload(`resenas/${Math.random()}.${archivoFoto.name.split('.').pop()}`, archivoFoto);
-      if (!uploadError) { const { data } = supabase.storage.from('fotos-edificios').getPublicUrl(`resenas/${Math.random()}.${archivoFoto.name.split('.').pop()}`); fotoUrl = data?.publicUrl || null; }
+    
+    let docUrl = null;
+    if (archivoDocVerificacion) {
+      const fileExt = archivoDocVerificacion.name.split('.').pop();
+      const fileName = `doc_${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('fotos-edificios').upload(fileName, archivoDocVerificacion);
+      if (!uploadError) {
+        const { data } = supabase.storage.from('fotos-edificios').getPublicUrl(fileName);
+        docUrl = data?.publicUrl || null;
+      }
     }
     
     const objetoResena = { 
@@ -391,7 +430,8 @@ export default function App() {
       comentario: nuevaResena.comentario, 
       nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, 
       etiqueta: nuevaResena.etiqueta, 
-      url_imagen: fotoUrl, 
+      doc_verificacion_url: docUrl,
+      es_verificado: false,
       usuario_email: session.user.email, 
       util_count: 0 
     };
@@ -405,26 +445,18 @@ export default function App() {
     const { error } = await supabase.from('resenas').insert([objetoResena]);
     if (!error) { 
       setModalResenaAbierto(false); 
-      setArchivoFoto(null); 
+      setArchivoDocVerificacion(null);
       setIncluirDatosEconomicos(false); 
       setNuevaResena({ comentario: '', gasto_comun: '', arriendo: '', habitaciones: '1', etiqueta: '🚇 Excelente conectividad al metro' }); 
       const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false }); 
       setResenas(res.data || []); 
       cargarEdificios(); 
-      mostrarAviso('¡Opinión publicada con éxito!'); 
+      mostrarAviso(docUrl ? '¡Reseña enviada! Revisaremos tu comprobante en breve.' : '¡Opinión publicada con éxito!'); 
     }
     setEnviando(false);
   };
 
   const handleGuardarAlerta = async (e) => { e.preventDefault(); if (!correoAlerta) return; setEnviando(true); const { error } = await supabase.from('alertas_arriendo').insert([{ edificio_id: edificioSeleccionado.id, correo: correoAlerta }]); if (!error) { mostrarAviso('Alerta activada'); setCorreoAlerta(''); setModalAlertaAbierto(false); } setEnviando(false); };
-  const handleGuardarFotoRapida = async (e) => {
-    e.preventDefault(); if (!edificioSeleccionado || !session || !archivoFotoRapida) return; setEnviando(true);
-    const { error: uploadError } = await supabase.storage.from('fotos-edificios').upload(`resenas/${Math.random()}.${archivoFotoRapida.name.split('.').pop()}`, archivoFotoRapida);
-    let fotoUrl = null; if (!uploadError) { const { data } = supabase.storage.from('fotos-edificios').getPublicUrl(`resenas/${Math.random()}.${archivoFotoRapida.name.split('.').pop()}`); fotoUrl = data?.publicUrl; }
-    const { error } = await supabase.from('resenas').insert([{ edificio_id: edificioSeleccionado.id, titulo: 'Foto de fachada', comentario: 'Aporte fotográfico.', nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, url_imagen: fotoUrl, usuario_email: session.user.email, es_verificado: true }]);
-    if (!error) { setModalFotoAbierto(false); setArchivoFotoRapida(null); const res = await supabase.from('resenas').select('*').eq('edificio_id', edificioSeleccionado.id).order('creado_en', { ascending: false }); setResenas(res.data || []); cargarEdificios(); mostrarAviso('¡Foto actualizada!'); }
-    setEnviando(false);
-  };
 
   const handleGuardarEdificio = async (e) => {
     e.preventDefault(); if (!session) return; setEnviando(true);
@@ -559,7 +591,7 @@ export default function App() {
          />
       )}
 
-      {/* MENÚ LATERAL */}
+      {/* MENÚ LATERAL (CON BOTÓN DE ADMIN SI ES TU CORREO) */}
       {sidebarAbierto && (
         <div className="fixed inset-0 z-[99999] flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => setSidebarAbierto(false)}></div>
@@ -584,7 +616,15 @@ export default function App() {
                 <button onClick={() => setVistaSidebar('perfil')} className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold transition-all ${vistaSidebar === 'perfil' ? 'bg-[#141417] text-white' : 'text-slate-400 hover:bg-[#141417]'}`}><Settings className="w-4 h-4" /> Mis Datos</button>
                 <button onClick={() => setVistaSidebar('password')} className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold transition-all ${vistaSidebar === 'password' ? 'bg-[#141417] text-white' : 'text-slate-400 hover:bg-[#141417]'}`}><KeyRound className="w-4 h-4" /> Seguridad</button>
                 <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold transition-all ${vistaSidebar === 'favoritos' ? 'bg-[#141417] text-white' : 'text-slate-400 hover:bg-[#141417]'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
-                <button onClick={() => { setModalEdificioAbierto(true); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold text-white bg-indigo-600 shadow-lg shadow-indigo-600/30 mt-4 active:scale-95"><Plus className="w-4 h-4" /> Nuevo Edificio</button>
+                
+                {/* BOTÓN REVISAR VERIFICACIONES (SOLO MOSTRAR A ADMIN) */}
+                {esAdmin && (
+                  <button onClick={() => { cargarVerificacionesAdmin(); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all mt-4">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> Aprobar Verificaciones
+                  </button>
+                )}
+
+                <button onClick={() => { setModalEdificioAbierto(true); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold text-white bg-indigo-600 shadow-lg shadow-indigo-600/30 mt-2 active:scale-95"><Plus className="w-4 h-4" /> Nuevo Edificio</button>
               </div>
 
               {vistaSidebar === 'perfil' && (
@@ -611,7 +651,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL RESEÑA */}
+      {/* MODAL RESEÑA (CON VERIFICACIÓN OPCIONAL Y AVISO DE PRIVACIDAD) */}
       {modalResenaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center md:px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalResenaAbierto(false)}></div>
@@ -647,14 +687,31 @@ export default function App() {
                 <textarea required rows="3" placeholder="Ej: Me mudé hace 6 meses y la verdad es que..." value={nuevaResena.comentario} onChange={(e) => setNuevaResena({...nuevaResena, comentario: e.target.value})} className="w-full bg-[#1a1a1f] p-4 rounded-2xl text-xs text-white resize-none outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium placeholder:text-slate-600" />
               </div>
               
+              {/* SECCIÓN OBTENER INSIGNIA VECINO VERIFICADO */}
+              <div className="bg-[#1a1a1f] p-5 rounded-3xl space-y-3 border border-emerald-500/10">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span className="font-bold text-white text-[11px]">Obtener insignia "Vecino Verificado" (Opcional)</span>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+                  Subes una foto de tu boleta de gasto común o contrato. 
+                  <strong className="text-slate-200 font-bold block mt-1">🔒 Aviso de Privacidad: Puedes tapar o difuminar tu nombre, RUT y depto. Solo revisamos la dirección del edificio.</strong>
+                </p>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setArchivoDocVerificacion(e.target.files[0])} 
+                  className="w-full text-[10px] text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-emerald-500/10 file:text-emerald-400 hover:file:bg-emerald-500/20 cursor-pointer" 
+                />
+              </div>
+
               <div className="bg-[#1a1a1f] p-5 rounded-3xl">
                 <label className="flex items-center justify-between cursor-pointer">
-                  <span className="font-bold text-white text-[11px]">Agregar Precios Reales (Ayuda mucho)</span>
+                  <span className="font-bold text-white text-[11px]">Agregar Precios Reales</span>
                   <input type="checkbox" checked={incluirDatosEconomicos} onChange={(e) => setIncluirDatosEconomicos(e.target.checked)} className="w-5 h-5 accent-indigo-600 rounded-md" />
                 </label>
                 {incluirDatosEconomicos && (
                   <div className="mt-4 pt-4 border-t border-white/5 space-y-4">
-                    
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 mb-2">Dormitorios</label>
                       <div className="flex gap-2">
@@ -684,6 +741,56 @@ export default function App() {
                 {enviando ? 'Publicando...' : 'Publicar Opinión'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ADMIN: REVISAR VERIFICACIONES PENDIENTES */}
+      {modalAdminAbierto && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAdminAbierto(false)}></div>
+          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-md p-6 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar">
+            <button onClick={() => setModalAdminAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-xl font-black text-white">Aprobar Verificaciones</h3>
+            </div>
+            <p className="text-xs text-slate-400 mb-6 font-medium">Revisa las boletas/contratos subidos por la comunidad.</p>
+
+            <div className="space-y-4">
+              {listaVerificaciones.length === 0 ? (
+                <div className="text-center py-8 text-xs text-slate-500 font-bold">No hay solicitudes pendientes.</div>
+              ) : (
+                listaVerificaciones.map(v => (
+                  <div key={v.id} className="bg-[#09090b] p-4 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-bold text-white">{v.edificios?.nombre}</p>
+                        <p className="text-[10px] text-slate-400">{v.usuario_email}</p>
+                      </div>
+                      <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded-lg">{v.etiqueta}</span>
+                    </div>
+
+                    <p className="text-xs text-slate-300 italic">"{v.comentario}"</p>
+
+                    {v.doc_verificacion_url && (
+                      <a href={v.doc_verificacion_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl">
+                        <FileText className="w-3.5 h-3.5" /> Ver Documento Subido
+                      </a>
+                    )}
+
+                    <div className="flex gap-2 pt-2 border-t border-white/5">
+                      <button onClick={() => responderVerificacion(v.id, true)} className="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all">
+                        <Check className="w-4 h-4" /> Aprobar Badges
+                      </button>
+                      <button onClick={() => responderVerificacion(v.id, false)} className="bg-rose-500/10 text-rose-400 font-bold px-3 py-2.5 rounded-xl text-xs active:scale-95 transition-all">
+                        <Ban className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
