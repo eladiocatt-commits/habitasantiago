@@ -108,63 +108,24 @@ const PanelEdificio = ({
 
       <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-28 no-scrollbar bg-[#09090b]">
         
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
+        {/* Acciones principales */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
             <MessageSquare className="w-5 h-5" />
             <span className="text-xs font-bold tracking-wide">Dar Opinión</span>
           </button>
-          <button onClick={() => abrirModalFoto()} className="flex flex-col items-center justify-center gap-2 bg-[#141417] hover:bg-[#1a1a1f] text-white py-4 px-4 rounded-3xl transition-all active:scale-95">
+          <button onClick={() => abrirModalFoto()} className="flex flex-col items-center justify-center gap-2 bg-[#141417] hover:bg-[#1a1a1f] text-white py-3.5 px-4 rounded-3xl transition-all active:scale-95">
             <Camera className="w-5 h-5 text-slate-400" />
             <span className="text-xs font-bold tracking-wide text-slate-400">Aportar Foto</span>
           </button>
         </div>
 
-        <div className="space-y-4 mb-10">
-          <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1">Data Financiera</h3>
-          
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-[#141417] rounded-3xl p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center"><DollarSign className="w-6 h-6 text-amber-500" /></div>
-                <div>
-                  <p className="text-[11px] text-slate-400 font-bold mb-0.5">Gasto Común Promedio</p>
-                  {promedioGasto !== 'Sin datos' ? (
-                    <p className="text-xl font-black text-white">{promedioGasto}</p>
-                  ) : (
-                    <p className="text-sm font-bold text-slate-500">Sin registros aún</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#141417] rounded-3xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Home className="w-4 h-4 text-emerald-500" /></div>
-                <p className="text-[11px] text-slate-400 font-bold">Arriendos por Tipología</p>
-              </div>
-              
-              {Object.keys(promediosArriendoPorHab).length === 0 ? (
-                <div className="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl">
-                  <p className="text-[11px] text-slate-400 font-medium mb-3">Ayuda a la comunidad publicando un precio de arriendo referencial.</p>
-                  <button onClick={() => requerirAuth(abrirModalResena)} className="text-[10px] font-bold bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-xl transition-all">Aportar Valor</button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
-                    <div key={hab} className="bg-[#09090b] rounded-2xl p-3 text-center">
-                      <div className="text-[10px] text-slate-500 font-bold mb-1">{hab} Dormitorios</div>
-                      <div className="text-sm font-black text-emerald-400">{monto}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-5 pl-1">
-             <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Reseñas Vecinales</h3>
+        {/* 🌟 LAS RESEÑAS AHORA VAN PRIMERO (PROTAGONISTA ABSOLUTO) */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4 pl-1">
+             <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+               <MessageSquare className="w-3.5 h-3.5 text-indigo-400" /> Reseñas Vecinales
+             </h3>
              <div className="flex items-center gap-1.5 bg-indigo-500/10 px-3 py-1.5 rounded-full">
                <Star className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
                <span className="text-[11px] font-bold text-indigo-400">{edificio.calificacion_promedio || 'N/A'}</span>
@@ -232,6 +193,51 @@ const PanelEdificio = ({
             )}
           </div>
         </div>
+
+        {/* Data Financiera movida hacia abajo como sección secundaria */}
+        <div className="space-y-4 mb-6">
+          <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1">Data Financiera (Promedios)</h3>
+          
+          <div className="grid grid-cols-1 gap-3">
+            <div className="bg-[#141417] rounded-3xl p-5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center"><DollarSign className="w-6 h-6 text-amber-500" /></div>
+                <div>
+                  <p className="text-[11px] text-slate-400 font-bold mb-0.5">Gasto Común Promedio</p>
+                  {promedioGasto !== 'Sin datos' ? (
+                    <p className="text-xl font-black text-white">{promedioGasto}</p>
+                  ) : (
+                    <p className="text-sm font-bold text-slate-500">Sin registros aún</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#141417] rounded-3xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Home className="w-4 h-4 text-emerald-500" /></div>
+                <p className="text-[11px] text-slate-400 font-bold">Arriendos por Tipología</p>
+              </div>
+              
+              {Object.keys(promediosArriendoPorHab).length === 0 ? (
+                <div className="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl">
+                  <p className="text-[11px] text-slate-400 font-medium mb-3">Ayuda a la comunidad publicando un precio de arriendo referencial.</p>
+                  <button onClick={() => requerirAuth(abrirModalResena)} className="text-[10px] font-bold bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-xl transition-all">Aportar Valor</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
+                    <div key={hab} className="bg-[#09090b] rounded-2xl p-3 text-center">
+                      <div className="text-[10px] text-slate-500 font-bold mb-1">{hab} Dormitorios</div>
+                      <div className="text-sm font-black text-emerald-400">{monto}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-[#09090b] via-[#09090b]/90 to-transparent pointer-events-none">
