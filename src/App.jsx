@@ -467,7 +467,10 @@ export default function App() {
       titulo: nuevaResena.etiqueta,
       comentario: nuevaResena.comentario, 
       calificacion: parseInt(nuevaResena.calificacion) || 5,
-      nota_ruido: 3, nota_administracion: 3, nota_gastos_comunes: 3, nota_seguridad: 3, 
+      nota_ruido: 3, 
+      nota_administracion: 3, 
+      nota_gastos_comunes: 3, 
+      nota_seguridad: 3, 
       etiqueta: nuevaResena.etiqueta, 
       doc_verificacion_url: docUrl,
       es_verificado: false,
@@ -491,6 +494,8 @@ export default function App() {
       setResenas(res.data || []); 
       cargarEdificios(); 
       mostrarAviso(docUrl ? '¡Reseña enviada! Revisaremos tu comprobante en breve.' : '¡Opinión publicada con éxito!'); 
+    } else {
+      mostrarAviso('Error al publicar la opinión: ' + error.message, 'error');
     }
     setEnviando(false);
   };
@@ -509,7 +514,11 @@ export default function App() {
   const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || e.comuna.toLowerCase().includes(busqueda.toLowerCase()) || e.direccion.toLowerCase().includes(busqueda.toLowerCase());
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
-    const matchRating = !filtroRating || (Number(e.calificacion_promedio) >= 4.0);
+    
+    // Conversión segura a número para que el filtro 4.0+ funcione de inmediato
+    const ratingNum = Number(e.calificacion_promedio) || 0;
+    const matchRating = !filtroRating || (ratingNum >= 4.0);
+    
     return matchTexto && matchComuna && matchRating;
   });
 
