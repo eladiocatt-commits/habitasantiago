@@ -82,9 +82,11 @@ const PanelEdificio = ({
   return (
     <div className="fixed inset-0 md:inset-y-0 md:right-0 md:left-auto w-full md:w-[480px] bg-[#09090b] shadow-2xl z-40 overflow-hidden flex flex-col animate-in slide-in-from-bottom md:slide-in-from-right duration-300">
       
-      <div className="relative h-56 md:h-72 w-full flex-shrink-0 bg-[#09090b]">
-        <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent"></div>
+      {/* CABECERA CON DATOS FINANCIEROS INTEGRADOS */}
+      <div className="relative h-64 md:h-80 w-full flex-shrink-0 bg-[#09090b]">
+        <img src={fotoFinal} alt="Portada" className="w-full h-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/50 to-transparent"></div>
+        
         <div className="absolute top-5 left-5 right-5 flex justify-between items-center z-10">
           <button onClick={cerrar} className="p-2.5 bg-black/40 backdrop-blur-xl rounded-full text-white transition-all active:scale-95 hover:bg-black/60">
             <X className="w-5 h-5" />
@@ -95,21 +97,33 @@ const PanelEdificio = ({
             </button>
           </div>
         </div>
-        <div className="absolute bottom-5 left-6 right-6 z-10">
-          <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest bg-indigo-600 text-white rounded-full mb-3 inline-block shadow-lg shadow-indigo-500/30">
-            {edificio.comuna}
-          </span>
-          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight">{edificio.nombre}</h2>
-          <p className="text-xs md:text-sm text-slate-300 flex items-center gap-1.5 mt-1.5 font-medium truncate opacity-80">
-            <MapPin className="w-4 h-4 text-indigo-400 flex-shrink-0" /> {edificio.direccion}
-          </p>
+
+        <div className="absolute bottom-5 left-6 right-6 z-10 flex justify-between items-end gap-4">
+          <div>
+            <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest bg-indigo-600 text-white rounded-full mb-2 inline-block shadow-lg shadow-indigo-500/30">
+              {edificio.comuna}
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight">{edificio.nombre}</h2>
+            <p className="text-xs md:text-sm text-slate-300 flex items-center gap-1.5 mt-1 font-medium truncate opacity-80">
+              <MapPin className="w-4 h-4 text-indigo-400 flex-shrink-0" /> {edificio.direccion}
+            </p>
+          </div>
+
+          {/* CHIP DE GASTO COMÚN RÁPIDO EN LA ESQUINA */}
+          {promedioGasto !== 'Sin datos' && (
+            <div className="bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-2.5 rounded-2xl text-right flex-shrink-0">
+              <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Gasto Común Prom.</p>
+              <p className="text-sm md:text-base font-black text-amber-400">{promedioGasto}</p>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* CUERPO PRINCIPAL CON LAS RESEÑAS DIRECTAMENTE */}
       <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-28 no-scrollbar bg-[#09090b]">
         
         {/* Acciones principales */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-8">
           <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
             <MessageSquare className="w-5 h-5" />
             <span className="text-xs font-bold tracking-wide">Dar Opinión</span>
@@ -120,8 +134,8 @@ const PanelEdificio = ({
           </button>
         </div>
 
-        {/* 🌟 LAS RESEÑAS AHORA VAN PRIMERO (PROTAGONISTA ABSOLUTO) */}
-        <div className="mb-8">
+        {/* Reseñas Vecinales (Protagonista) */}
+        <div>
           <div className="flex items-center justify-between mb-4 pl-1">
              <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                <MessageSquare className="w-3.5 h-3.5 text-indigo-400" /> Reseñas Vecinales
@@ -191,50 +205,6 @@ const PanelEdificio = ({
                 );
               })
             )}
-          </div>
-        </div>
-
-        {/* Data Financiera movida hacia abajo como sección secundaria */}
-        <div className="space-y-4 mb-6">
-          <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1">Data Financiera (Promedios)</h3>
-          
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-[#141417] rounded-3xl p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center"><DollarSign className="w-6 h-6 text-amber-500" /></div>
-                <div>
-                  <p className="text-[11px] text-slate-400 font-bold mb-0.5">Gasto Común Promedio</p>
-                  {promedioGasto !== 'Sin datos' ? (
-                    <p className="text-xl font-black text-white">{promedioGasto}</p>
-                  ) : (
-                    <p className="text-sm font-bold text-slate-500">Sin registros aún</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#141417] rounded-3xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 bg-emerald-500/10 rounded-xl"><Home className="w-4 h-4 text-emerald-500" /></div>
-                <p className="text-[11px] text-slate-400 font-bold">Arriendos por Tipología</p>
-              </div>
-              
-              {Object.keys(promediosArriendoPorHab).length === 0 ? (
-                <div className="flex flex-col items-center text-center p-4 bg-black/20 rounded-2xl">
-                  <p className="text-[11px] text-slate-400 font-medium mb-3">Ayuda a la comunidad publicando un precio de arriendo referencial.</p>
-                  <button onClick={() => requerirAuth(abrirModalResena)} className="text-[10px] font-bold bg-white/5 hover:bg-white/10 text-white px-4 py-2.5 rounded-xl transition-all">Aportar Valor</button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(promediosArriendoPorHab).map(([hab, monto]) => (
-                    <div key={hab} className="bg-[#09090b] rounded-2xl p-3 text-center">
-                      <div className="text-[10px] text-slate-500 font-bold mb-1">{hab} Dormitorios</div>
-                      <div className="text-sm font-black text-emerald-400">{monto}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
