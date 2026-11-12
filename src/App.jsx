@@ -235,7 +235,8 @@ export default function App() {
   const [buscadorActivo, setBuscadorActivo] = useState(false);
   const [edificioSeleccionado, setEdificioSeleccionado] = useState(null);
   const [resenas, setResenas] = useState([]);
-  
+  const [modalLegalInfo, setModalLegalInfo] = useState(null);
+
   const [filtroComuna, setFiltroComuna] = useState('todas');
   const [filtroRating, setFiltroRating] = useState(false);
   const [favoritos, setFavoritos] = useState([]);
@@ -824,48 +825,63 @@ export default function App() {
         </div>
       )}
 
-{/* MODAL AUTH */}
-      {modalAuthAbierto && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAuthAbierto(false)}></div>
-          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-sm p-6 shadow-2xl">
-            <button onClick={() => setModalAuthAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
-            
-            <div className="flex bg-[#09090b] p-1.5 rounded-2xl mb-6">
-              <button onClick={() => setModoAuth('login')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'login' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Entrar</button>
-              <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'registro' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Registro</button>
-            </div>
+{/* {/* MODAL AUTH */}
+{modalAuthAbierto && (
+  <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAuthAbierto(false)}></div>
+    <div className="relative bg-[#141417] rounded-[32px] w-full max-w-sm p-6 shadow-2xl">
+      <button onClick={() => setModalAuthAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
+      
+      <div className="flex bg-[#09090b] p-1.5 rounded-2xl mb-6">
+        <button onClick={() => setModoAuth('login')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'login' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Entrar</button>
+        <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'registro' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Registro</button>
+      </div>
 
-            {registroExitosoMsg ? (
-              <div className="text-center py-6 space-y-3">
-                <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-400 font-bold">✓</div>
-                <h4 className="text-sm font-bold text-white">¡Cuenta creada con éxito!</h4>
-                <p className="text-[11px] text-slate-400 leading-relaxed">Te hemos enviado un correo de confirmación. Revisa tu bandeja para activar tu cuenta.</p>
-                <button onClick={() => { setRegistroExitosoMsg(false); setModalAuthAbierto(false); }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs mt-4">Entendido</button>
-              </div>
-            ) : (
-              <form onSubmit={handleAuthSubmit} className="space-y-3">
-                <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
-                <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
-                
-                {/* CHECKBOX OBLIGATORIO EN REGISTRO */}
-                {modoAuth === 'registro' && (
-                  <div className="flex items-start gap-2 pt-2">
-                    <input type="checkbox" required className="mt-0.5 accent-indigo-600 rounded cursor-pointer" />
-                    <label className="text-[10px] text-slate-400 leading-tight">
-                      Acepto los <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => alert("Términos y Condiciones:\n\n1. HabitaSantiago es una comunidad colaborativa.\n2. Debes publicar información respetuosa y basada en experiencias reales.\n3. Nos reservamos el derecho de eliminar contenido falso.")}>Términos y Condiciones</span> y la <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => alert("Política de Privacidad:\n\n1. Solo usamos tu correo para autenticación.\n2. Tus documentos de verificación son privados y jamás se venden o comparten a terceros.")}>Política de Privacidad</span>.
-                    </label>
-                  </div>
-                )}
-
-                <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-2xl text-xs mt-2 shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
-                  {enviando ? 'Procesando...' : (modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarse')}
-                </button>
-              </form>
-            )}
+      {/* SUB-MODAL PARA TEXTOS LEGALES */}
+      {modalLegalInfo ? (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <h4 className="text-sm font-black text-white">{modalLegalInfo.titulo}</h4>
+          <div className="bg-[#09090b] p-4 rounded-2xl text-[11px] text-slate-300 leading-relaxed max-h-48 overflow-y-auto no-scrollbar font-medium whitespace-pre-line">
+            {modalLegalInfo.texto}
           </div>
+          <button onClick={() => setModalLegalInfo(null)} className="w-full bg-white text-black font-extrabold py-3 rounded-xl text-xs active:scale-95 transition-all">Volver al Registro</button>
         </div>
+      ) : registroExitosoMsg ? (
+        <div className="text-center py-6 space-y-3">
+          <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-400 font-bold">✓</div>
+          <h4 className="text-sm font-bold text-white">¡Cuenta creada con éxito!</h4>
+          <p className="text-[11px] text-slate-400 leading-relaxed">Te hemos enviado un correo de confirmación. Revisa tu bandeja para activar tu cuenta.</p>
+          <button onClick={() => { setRegistroExitosoMsg(false); setModalAuthAbierto(false); }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs mt-4">Entendido</button>
+        </div>
+      ) : (
+        <form onSubmit={handleAuthSubmit} className="space-y-3">
+          <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
+          <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
+          
+          {/* CHECKBOX OBLIGATORIO EN REGISTRO */}
+          {modoAuth === 'registro' && (
+            <div className="flex items-start gap-2 pt-2">
+              <input type="checkbox" required className="mt-0.5 accent-indigo-600 rounded cursor-pointer" />
+              <label className="text-[10px] text-slate-400 leading-tight">
+                Acepto los <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
+                  titulo: 'Términos y Condiciones',
+                  texto: '1. HabitaSantiago es una comunidad colaborativa e informativa para compartir experiencias residenciales.\n\n2. Te comprometes a publicar información respetuosa, verídica y basada en experiencias reales.\n\n3. Nos reservamos el derecho de eliminar contenido ofensivo, falso o cuentas que incumplan estas normas para mantener una sana convivencia.'
+                })}>Términos y Condiciones</span> y la <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
+                  titulo: 'Política de Privacidad',
+                  texto: '1. Almacenamos únicamente tu correo electrónico para la autenticación y notificaciones de la plataforma.\n\n2. Los documentos o boletas subidos para la insignia de Vecino Verificado se revisan de forma privada y segura.\n\n3. Tus datos personales jamás serán vendidos ni compartidos con terceros con fines comerciales.'
+                })}>Política de Privacidad</span>.
+              </label>
+            </div>
+          )}
+
+          <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-2xl text-xs mt-2 shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
+            {enviando ? 'Procesando...' : (modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarse')}
+          </button>
+        </form>
       )}
+    </div>
+  </div>
+)}
 
       {modalAlertaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
