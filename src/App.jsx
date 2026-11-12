@@ -515,7 +515,7 @@ export default function App() {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || e.comuna.toLowerCase().includes(busqueda.toLowerCase()) || e.direccion.toLowerCase().includes(busqueda.toLowerCase());
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
     
-    // Conversión segura a número para que el filtro 4.0+ funcione de inmediato
+    // Forzamos conversión numérica segura para que el filtro 4.0+ funcione de inmediato
     const ratingNum = Number(e.calificacion_promedio) || 0;
     const matchRating = !filtroRating || (ratingNum >= 4.0);
     
