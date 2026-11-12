@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { createPathComponent } from '@react-leaflet/core';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { 
   Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare, ShieldCheck, FileText, Check, Ban
 } from 'lucide-react';
@@ -38,7 +42,21 @@ function MapResizer({ edificioSeleccionado }) {
   }, [map, edificioSeleccionado]);
   return null;
 }
+const LeafletClusterGroup = createPathComponent(({ children, ...options }, ctx) => {
+  const clusterGroup = L.markerClusterGroup(options);
+  
+  Object.keys(options).forEach((prop) => {
+    if (prop.startsWith('on')) {
+      const event = prop.replace('on', '').toLowerCase();
+      clusterGroup.on(event, options[prop]);
+    }
+  });
 
+  return {
+    instance: clusterGroup,
+    context: { ...ctx, layerContainer: clusterGroup },
+  };
+});
 const PanelEdificio = ({ 
   edificio, cerrar, resenas, promedios, favoritos, toggleFavorito, 
   abrirModalResena, abrirModalFoto, abrirModalAlerta, 
@@ -565,9 +583,25 @@ export default function App() {
           <MapResizer edificioSeleccionado={edificioSeleccionado} />
           <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
-          {edificiosFiltrados.map((edificio) => (
-            <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon} eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }} />
-          ))}
+ <MapResizer edificioSeleccionado={edificioSeleccionado} />
+  <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+  {/* AQUÍ COMIENZA EL CLÚSTER */}
+  <LeafletClusterGroup>
+    {edificiosFiltrados.map((edificio) => (
+      <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon}>
+        <Popup>
+          <div className="p-2">
+            <h3 className="font-bold">{edificio.nombre}</h3>
+            <p className="text-sm">{edificio.comuna}</p>
+          </div>
+        </Popup>
+      </Marker>
+    ))}
+  </LeafletClusterGroup>
+  {/* AQUÍ TERMINA EL CLÚSTER */}
+
+</MapContainer>
         </MapContainer>
       </div>
 
