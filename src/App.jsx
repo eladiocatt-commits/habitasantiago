@@ -57,6 +57,7 @@ const LeafletClusterGroup = createPathComponent(({ children, ...options }, ctx) 
     context: { ...ctx, layerContainer: clusterGroup },
   };
 });
+
 const PanelEdificio = ({ 
   edificio, cerrar, resenas, promedios, favoritos, toggleFavorito, 
   abrirModalResena, abrirModalFoto, abrirModalAlerta, 
@@ -107,7 +108,6 @@ const PanelEdificio = ({
 
       <div className="flex-1 overflow-y-auto overscroll-contain p-6 pb-28 no-scrollbar bg-[#09090b]">
         
-        {/* Acciones principales */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <button onClick={() => requerirAuth(abrirModalResena)} className="flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-4 px-4 rounded-3xl transition-all shadow-[0_8px_20px_rgba(99,102,241,0.25)] active:scale-95">
             <MessageSquare className="w-5 h-5" />
@@ -119,7 +119,6 @@ const PanelEdificio = ({
           </button>
         </div>
 
-        {/* Data Financiera */}
         <div className="space-y-4 mb-10">
           <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1">Data Financiera</h3>
           
@@ -163,7 +162,6 @@ const PanelEdificio = ({
           </div>
         </div>
 
-        {/* Reseñas Vecinales */}
         <div>
           <div className="flex items-center justify-between mb-5 pl-1">
              <h3 className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Reseñas Vecinales</h3>
@@ -365,7 +363,6 @@ export default function App() {
     if (!error) { setResenas(resenas.filter(r => r.id !== resenaId)); cargarEdificios(); mostrarAviso('Reseña eliminada.'); }
   };
 
-  // Cargar lista de solicitudes de verificación pendientes (Exclusivo Admin)
   const cargarVerificacionesAdmin = async () => {
     const { data, error } = await supabase
       .from('resenas')
@@ -419,10 +416,22 @@ export default function App() {
   };
 
   const handleAuthSubmit = async (e) => {
-    e.preventDefault(); setEnviando(true); setAuthError('');
-    if (modoAuth === 'registro') { const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword, options: { emailRedirectTo: window.location.origin } }); if (error) setAuthError(error.message); else setRegistroExitosoMsg(true); } 
-    else if (modoAuth === 'login') { const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword }); if (error) setAuthError('Credenciales incorrectas.'); else { setModalAuthAbierto(false); mostrarAviso('¡Bienvenido de vuelta!'); } } 
-    else if (modoAuth === 'recuperar') { const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: window.location.origin }); if (error) setAuthError(error.message); else setRecuperacionEnviada(true); }
+    e.preventDefault(); 
+    setEnviando(true); 
+    setAuthError('');
+    if (modoAuth === 'registro') { 
+      const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword, options: { emailRedirectTo: window.location.origin } }); 
+      if (error) setAuthError(error.message); else setRegistroExitosoMsg(true); 
+    } 
+    else if (modoAuth === 'login') { 
+      const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword }); 
+      if (error) setAuthError('Correo o contraseña incorrectos. Inténtalo de nuevo.'); 
+      else { setModalAuthAbierto(false); mostrarAviso('¡Bienvenido de vuelta!'); } 
+    } 
+    else if (modoAuth === 'recuperar') { 
+      const { error } = await supabase.auth.resetPasswordForEmail(authEmail, { redirectTo: window.location.origin }); 
+      if (error) setAuthError(error.message); else setRecuperacionEnviada(true); 
+    }
     setEnviando(false);
   };
 
@@ -574,29 +583,40 @@ export default function App() {
           </div>
         </div>
 
-        {/* MAPA */}
+        {/* MAPA Y PINES */}
         <MapContainer center={[-33.4489, -70.6693]} zoom={13} style={{ width: '100%', height: '100%', backgroundColor: '#09090b' }} zoomControl={false}>
-  <style>{`
-    .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
-  `}</style>
+          <style>{`
+            .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+          `}</style>
 
-  <MapResizer edificioSeleccionado={edificioSeleccionado} />
-  <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <MapResizer edificioSeleccionado={edificioSeleccionado} />
+          <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-  <LeafletClusterGroup>
-    {edificiosFiltrados.map((edificio) => (
-      <Marker key={edificio.id} position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} icon={modernIcon}>
-        <Popup>
-          <div className="p-2">
-            <h3 className="font-bold">{edificio.nombre}</h3>
-            <p className="text-sm">{edificio.comuna}</p>
-          </div>
-        </Popup>
-      </Marker>
-    ))}
-  </LeafletClusterGroup>
-</MapContainer>
-</div>
+          <LeafletClusterGroup>
+            {edificiosFiltrados.map((edificio) => (
+              <Marker 
+                key={edificio.id} 
+                position={[parseFloat(edificio.latitud), parseFloat(edificio.longitud)]} 
+                icon={modernIcon}
+                eventHandlers={{ click: () => setEdificioSeleccionado(edificio) }}
+              >
+                <Popup>
+                  <div className="min-w-[180px] p-1 flex flex-col">
+                    <h3 className="font-black text-[13px] text-slate-800 mb-1 leading-tight">{edificio.nombre}</h3>
+                    <p className="text-[10px] font-bold text-slate-500 mb-3">{edificio.direccion}</p>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setEdificioSeleccionado(edificio); }} 
+                      className="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl text-[11px] active:scale-95 transition-all shadow-md"
+                    >
+                      Ver Detalles
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </LeafletClusterGroup>
+        </MapContainer>
+      </div>
 
       {edificioSeleccionado && (
          <PanelEdificio 
@@ -645,7 +665,6 @@ export default function App() {
                 <button onClick={() => setVistaSidebar('password')} className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold transition-all ${vistaSidebar === 'password' ? 'bg-[#141417] text-white' : 'text-slate-400 hover:bg-[#141417]'}`}><KeyRound className="w-4 h-4" /> Seguridad</button>
                 <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold transition-all ${vistaSidebar === 'favoritos' ? 'bg-[#141417] text-white' : 'text-slate-400 hover:bg-[#141417]'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
                 
-                {/* BOTÓN REVISAR VERIFICACIONES (SOLO MOSTRAR A ADMIN) */}
                 {esAdmin && (
                   <button onClick={() => { cargarVerificacionesAdmin(); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all mt-4">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" /> Aprobar Verificaciones
@@ -852,63 +871,72 @@ export default function App() {
         </div>
       )}
 
-{/* {/* MODAL AUTH */}
-{modalAuthAbierto && (
-  <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAuthAbierto(false)}></div>
-    <div className="relative bg-[#141417] rounded-[32px] w-full max-w-sm p-6 shadow-2xl">
-      <button onClick={() => setModalAuthAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
-      
-      <div className="flex bg-[#09090b] p-1.5 rounded-2xl mb-6">
-        <button onClick={() => setModoAuth('login')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'login' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Entrar</button>
-        <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'registro' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Registro</button>
-      </div>
-
-      {/* SUB-MODAL PARA TEXTOS LEGALES */}
-      {modalLegalInfo ? (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          <h4 className="text-sm font-black text-white">{modalLegalInfo.titulo}</h4>
-          <div className="bg-[#09090b] p-4 rounded-2xl text-[11px] text-slate-300 leading-relaxed max-h-48 overflow-y-auto no-scrollbar font-medium whitespace-pre-line">
-            {modalLegalInfo.texto}
-          </div>
-          <button onClick={() => setModalLegalInfo(null)} className="w-full bg-white text-black font-extrabold py-3 rounded-xl text-xs active:scale-95 transition-all">Volver al Registro</button>
-        </div>
-      ) : registroExitosoMsg ? (
-        <div className="text-center py-6 space-y-3">
-          <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-400 font-bold">✓</div>
-          <h4 className="text-sm font-bold text-white">¡Cuenta creada con éxito!</h4>
-          <p className="text-[11px] text-slate-400 leading-relaxed">Te hemos enviado un correo de confirmación. Revisa tu bandeja para activar tu cuenta.</p>
-          <button onClick={() => { setRegistroExitosoMsg(false); setModalAuthAbierto(false); }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs mt-4">Entendido</button>
-        </div>
-      ) : (
-        <form onSubmit={handleAuthSubmit} className="space-y-3">
-          <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
-          <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
-          
-          {/* CHECKBOX OBLIGATORIO EN REGISTRO */}
-          {modoAuth === 'registro' && (
-            <div className="flex items-start gap-2 pt-2">
-              <input type="checkbox" required className="mt-0.5 accent-indigo-600 rounded cursor-pointer" />
-              <label className="text-[10px] text-slate-400 leading-tight">
-                Acepto los <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
-                  titulo: 'Términos y Condiciones',
-                  texto: '1. HabitaSantiago es una comunidad colaborativa e informativa para compartir experiencias residenciales.\n\n2. Te comprometes a publicar información respetuosa, verídica y basada en experiencias reales.\n\n3. Nos reservamos el derecho de eliminar contenido ofensivo, falso o cuentas que incumplan estas normas para mantener una sana convivencia.'
-                })}>Términos y Condiciones</span> y la <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
-                  titulo: 'Política de Privacidad',
-                  texto: '1. Almacenamos únicamente tu correo electrónico para la autenticación y notificaciones de la plataforma.\n\n2. Los documentos o boletas subidos para la insignia de Vecino Verificado se revisan de forma privada y segura.\n\n3. Tus datos personales jamás serán vendidos ni compartidos con terceros con fines comerciales.'
-                })}>Política de Privacidad</span>.
-              </label>
+      {/* MODAL AUTH */}
+      {modalAuthAbierto && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAuthAbierto(false)}></div>
+          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-sm p-6 shadow-2xl">
+            <button onClick={() => setModalAuthAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
+            
+            <div className="flex bg-[#09090b] p-1.5 rounded-2xl mb-6">
+              <button onClick={() => setModoAuth('login')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'login' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Entrar</button>
+              <button onClick={() => setModoAuth('registro')} className={`flex-1 py-2.5 text-[11px] font-bold rounded-xl transition-all ${modoAuth === 'registro' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}>Registro</button>
             </div>
-          )}
 
-          <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-2xl text-xs mt-2 shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
-            {enviando ? 'Procesando...' : (modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarse')}
-          </button>
-        </form>
+            {/* SUB-MODAL PARA TEXTOS LEGALES */}
+            {modalLegalInfo ? (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <h4 className="text-sm font-black text-white">{modalLegalInfo.titulo}</h4>
+                <div className="bg-[#09090b] p-4 rounded-2xl text-[11px] text-slate-300 leading-relaxed max-h-48 overflow-y-auto no-scrollbar font-medium whitespace-pre-line">
+                  {modalLegalInfo.texto}
+                </div>
+                <button onClick={() => setModalLegalInfo(null)} className="w-full bg-white text-black font-extrabold py-3 rounded-xl text-xs active:scale-95 transition-all">Volver al Registro</button>
+              </div>
+            ) : registroExitosoMsg ? (
+              <div className="text-center py-6 space-y-3">
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-400 font-bold">✓</div>
+                <h4 className="text-sm font-bold text-white">¡Cuenta creada con éxito!</h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed">Te hemos enviado un correo de confirmación. Revisa tu bandeja para activar tu cuenta.</p>
+                <button onClick={() => { setRegistroExitosoMsg(false); setModalAuthAbierto(false); }} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs mt-4">Entendido</button>
+              </div>
+            ) : (
+              <form onSubmit={handleAuthSubmit} className="space-y-3">
+                
+                {/* AQUI ESTÁ EL MENSAJE DE ERROR CORREGIDO */}
+                {authError && (
+                  <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-2xl text-[11px] font-bold flex items-center gap-2 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {authError}
+                  </div>
+                )}
+
+                <input type="email" required placeholder="Correo" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                <input type="password" required minLength={6} placeholder="Contraseña" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full bg-[#09090b] p-4 rounded-2xl text-xs font-bold text-white outline-none focus:ring-2 focus:ring-indigo-500/50" />
+                
+                {/* CHECKBOX OBLIGATORIO EN REGISTRO */}
+                {modoAuth === 'registro' && (
+                  <div className="flex items-start gap-2 pt-2">
+                    <input type="checkbox" required className="mt-0.5 accent-indigo-600 rounded cursor-pointer" />
+                    <label className="text-[10px] text-slate-400 leading-tight">
+                      Acepto los <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
+                        titulo: 'Términos y Condiciones',
+                        texto: '1. HabitaSantiago es una comunidad colaborativa e informativa para compartir experiencias residenciales.\n\n2. Te comprometes a publicar información respetuosa, verídica y basada en experiencias reales.\n\n3. Nos reservamos el derecho de eliminar contenido ofensivo, falso o cuentas que incumplan estas normas para mantener una sana convivencia.'
+                      })}>Términos y Condiciones</span> y la <span className="text-indigo-400 font-bold underline cursor-pointer" onClick={() => setModalLegalInfo({
+                        titulo: 'Política de Privacidad',
+                        texto: '1. Almacenamos únicamente tu correo electrónico para la autenticación y notificaciones de la plataforma.\n\n2. Los documentos o boletas subidos para la insignia de Vecino Verificado se revisan de forma privada y segura.\n\n3. Tus datos personales jamás serán vendidos ni compartidos con terceros con fines comerciales.'
+                      })}>Política de Privacidad</span>.
+                    </label>
+                  </div>
+                )}
+
+                <button type="submit" disabled={enviando} className="w-full bg-indigo-600 text-white font-extrabold py-4 rounded-2xl text-xs mt-2 shadow-lg shadow-indigo-600/30 active:scale-95 transition-all">
+                  {enviando ? 'Procesando...' : (modoAuth === 'login' ? 'Iniciar Sesión' : 'Registrarse')}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       )}
-    </div>
-  </div>
-)}
 
       {modalAlertaAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
