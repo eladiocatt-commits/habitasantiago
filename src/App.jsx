@@ -7,7 +7,7 @@ import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { 
-  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare, ShieldCheck, FileText, Check, Ban
+  Star, MapPin, Building, Search, Plus, X, LogIn, LogOut, DollarSign, Camera, Heart, Home, Bell, ShieldAlert, CheckCircle2, AlertCircle, ThumbsUp, Menu, Trash2, Bookmark, Settings, KeyRound, MessageSquare, ShieldCheck, FileText, Check, Ban, Sparkles
 } from 'lucide-react';
 
 const modernIcon = L.divIcon({
@@ -277,12 +277,18 @@ export default function App() {
   const [modalFotoAbierto, setModalFotoAbierto] = useState(false);
   const [modalAlertaAbierto, setModalAlertaAbierto] = useState(false);
   const [modalAdminAbierto, setModalAdminAbierto] = useState(false);
+  const [tabAdmin, setTabAdmin] = useState('verificaciones');
   const [modalEdificioAbierto, setModalEdificioAbierto] = useState(false);
   const [modalAuthAbierto, setModalAuthAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState('login');
   const [enviando, setEnviando] = useState(false);
   const [incluirDatosEconomicos, setIncluirDatosEconomicos] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState(null);
+
+  // Estados para Feedback de la Plataforma
+  const [modalFeedbackAbierto, setModalFeedbackAbierto] = useState(false);
+  const [feedbackData, setFeedbackData] = useState({ tipo: '💡 Idea / Mejora', mensaje: '' });
+  const [listaFeedback, setListaFeedback] = useState([]);
 
   const [listaVerificaciones, setListaVerificaciones] = useState([]);
   const [archivoDocVerificacion, setArchivoDocVerificacion] = useState(null);
@@ -372,18 +378,24 @@ export default function App() {
     if (!error) { setResenas(resenas.filter(r => r.id !== resenaId)); cargarEdificios(); mostrarAviso('Reseña eliminada.'); }
   };
 
-  const cargarVerificacionesAdmin = async () => {
-    const { data, error } = await supabase
+  const abrirPanelAdmin = async () => {
+    // Cargar verificaciones pendientes
+    const { data: verifData } = await supabase
       .from('resenas')
       .select('*, edificios(nombre, comuna)')
       .not('doc_verificacion_url', 'is', null)
       .eq('es_verificado', false)
       .order('creado_en', { ascending: false });
       
-    if (!error) {
-      setListaVerificaciones(data || []);
-      setModalAdminAbierto(true);
-    }
+    // Cargar mensajes de feedback de la app
+    const { data: feedData } = await supabase
+      .from('feedback_plataforma')
+      .select('*')
+      .order('creado_en', { ascending: false });
+
+    setListaVerificaciones(verifData || []);
+    setListaFeedback(feedData || []);
+    setModalAdminAbierto(true);
   };
 
   const responderVerificacion = async (resenaId, aprobar) => {
@@ -400,6 +412,35 @@ export default function App() {
         setResenas(res.data || []);
       }
     }
+  };
+
+  const eliminarFeedbackAdmin = async (id) => {
+    const { error } = await supabase.from('feedback_plataforma').delete().eq('id', id);
+    if (!error) {
+      setListaFeedback(listaFeedback.filter(f => f.id !== id));
+      mostrarAviso('Mensaje eliminado del buzón');
+    }
+  };
+
+  const handleGuardarFeedback = async (e) => {
+    e.preventDefault();
+    if (!feedbackData.mensaje.trim()) return;
+    setEnviando(true);
+
+    const { error } = await supabase.from('feedback_plataforma').insert([{
+      tipo: feedbackData.tipo,
+      mensaje: feedbackData.mensaje,
+      usuario_email: session?.user?.email || 'Anónimo'
+    }]);
+
+    if (!error) {
+      setModalFeedbackAbierto(false);
+      setFeedbackData({ tipo: '💡 Idea / Mejora', mensaje: '' });
+      mostrarAviso('¡Gracias! Tu comentario nos ayuda a mejorar.');
+    } else {
+      mostrarAviso('No se pudo enviar el comentario.', 'error');
+    }
+    setEnviando(false);
   };
 
   const calcularPromediosEdificio = () => {
@@ -511,14 +552,11 @@ export default function App() {
     setEnviando(false);
   };
 
- const edificiosFiltrados = edificios.filter(e => {
+  const edificiosFiltrados = edificios.filter(e => {
     const matchTexto = e.nombre.toLowerCase().includes(busqueda.toLowerCase()) || e.comuna.toLowerCase().includes(busqueda.toLowerCase()) || e.direccion.toLowerCase().includes(busqueda.toLowerCase());
     const matchComuna = filtroComuna === 'todas' || e.comuna.toLowerCase() === filtroComuna.toLowerCase();
-    
-    // Forzamos conversión numérica segura para que el filtro 4.0+ reconozca las calificaciones
     const ratingNum = Number(e.calificacion_promedio) || 0;
     const matchRating = !filtroRating || (ratingNum >= 4.0);
-    
     return matchTexto && matchComuna && matchRating;
   });
 
@@ -587,6 +625,15 @@ export default function App() {
             </button>
           </div>
         </header>
+
+        {/* BOTÓN FLOTANTE DISCRETO PARA FEEDBACK DE LA APP */}
+        <button 
+          onClick={() => setModalFeedbackAbierto(true)}
+          className="fixed bottom-24 left-5 md:bottom-8 md:left-6 z-30 bg-[#141417]/80 hover:bg-[#1a1a1f] backdrop-blur-2xl border border-white/10 text-slate-300 hover:text-white px-3.5 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-[11px] font-bold transition-all active:scale-95"
+        >
+          <Sparkles className="w-4 h-4 text-indigo-400" />
+          <span className="hidden sm:inline">Mejorar App</span>
+        </button>
 
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none w-full max-w-sm px-4">
           <div className="pointer-events-auto bg-[#09090b]/60 backdrop-blur-2xl p-1.5 rounded-[20px] shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
@@ -678,8 +725,8 @@ export default function App() {
                 <button onClick={() => setVistaSidebar('favoritos')} className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold transition-all ${vistaSidebar === 'favoritos' ? 'bg-[#141417] text-white' : 'text-slate-400 hover:bg-[#141417]'}`}><Bookmark className="w-4 h-4" /> Guardados ({favoritos.length})</button>
                 
                 {esAdmin && (
-                  <button onClick={() => { cargarVerificacionesAdmin(); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all mt-4">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> Aprobar Verificaciones
+                  <button onClick={() => { abrirPanelAdmin(); setSidebarAbierto(false); }} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 active:scale-95 transition-all mt-4">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> Panel Administrador
                   </button>
                 )}
 
@@ -706,6 +753,54 @@ export default function App() {
                 <LogOut className="w-4 h-4" /> Cerrar Sesión
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE FEEDBACK PARA MEJORAR LA PLATAFORMA */}
+      {modalFeedbackAbierto && (
+        <div className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center md:px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalFeedbackAbierto(false)}></div>
+          <div className="relative bg-[#09090b] md:bg-[#141417] md:rounded-[32px] rounded-t-[32px] w-full max-w-sm p-6 shadow-2xl pb-10">
+            <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 md:hidden"></div>
+            <button onClick={() => setModalFeedbackAbierto(false)} className="hidden md:block absolute top-5 right-5 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            
+            <h3 className="text-xl font-black text-white mb-1">Ayúdanos a mejorar</h3>
+            <p className="text-xs text-slate-400 font-medium mb-5">¿Encontraste un error o tienes una idea para HabitaSantiago? Cuéntanos.</p>
+
+            <form onSubmit={handleGuardarFeedback} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Categoría</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['💡 Idea / Mejora', '🐛 Reportar Error', '⭐ Opinión'].map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setFeedbackData({ ...feedbackData, tipo: cat })}
+                      className={`py-2.5 px-2 rounded-xl text-[10px] font-bold transition-all active:scale-95 ${feedbackData.tipo === cat ? 'bg-indigo-600 text-white shadow-md' : 'bg-[#1a1a1f] text-slate-400 hover:text-white'}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Tu Mensaje</label>
+                <textarea 
+                  required 
+                  rows="3" 
+                  placeholder="Ej: Sería genial poder filtrar por edificios que acepten mascotas..." 
+                  value={feedbackData.mensaje} 
+                  onChange={(e) => setFeedbackData({ ...feedbackData, mensaje: e.target.value })} 
+                  className="w-full bg-[#1a1a1f] p-4 rounded-2xl text-xs text-white resize-none outline-none focus:ring-2 focus:ring-indigo-500/50 font-medium placeholder:text-slate-600" 
+                />
+              </div>
+
+              <button type="submit" disabled={enviando} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-indigo-600/30 active:scale-95 transition-all text-xs">
+                {enviando ? 'Enviando...' : 'Enviar Comentario'}
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -823,49 +918,88 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL ADMINISTRADOR CON PESTAÑAS (VERIFICACIONES Y FEEDBACK) */}
       {modalAdminAbierto && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setModalAdminAbierto(false)}></div>
-          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-md p-6 shadow-2xl max-h-[85vh] overflow-y-auto no-scrollbar">
-            <button onClick={() => setModalAdminAbierto(false)} className="absolute top-5 right-5 text-slate-400"><X className="w-5 h-5" /></button>
-            <div className="flex items-center gap-2 mb-1">
+          <div className="relative bg-[#141417] rounded-[32px] w-full max-w-md p-6 shadow-2xl max-h-[85vh] flex flex-col">
+            <button onClick={() => setModalAdminAbierto(false)} className="absolute top-5 right-5 text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+            
+            <div className="flex items-center gap-2 mb-4">
               <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-xl font-black text-white">Aprobar Verificaciones</h3>
+              <h3 className="text-xl font-black text-white">Panel Administrador</h3>
             </div>
-            <p className="text-xs text-slate-400 mb-6 font-medium">Revisa las boletas/contratos subidos por la comunidad.</p>
 
-            <div className="space-y-4">
-              {listaVerificaciones.length === 0 ? (
-                <div className="text-center py-8 text-xs text-slate-500 font-bold">No hay solicitudes pendientes.</div>
-              ) : (
-                listaVerificaciones.map(v => (
-                  <div key={v.id} className="bg-[#09090b] p-4 rounded-2xl space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs font-bold text-white">{v.edificios?.nombre}</p>
-                        <p className="text-[10px] text-slate-400">{v.usuario_email}</p>
+            {/* PESTAÑAS DEL PANEL ADMIN */}
+            <div className="flex bg-[#09090b] p-1.5 rounded-2xl mb-5">
+              <button 
+                onClick={() => setTabAdmin('verificaciones')} 
+                className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all ${tabAdmin === 'verificaciones' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}
+              >
+                Verificaciones ({listaVerificaciones.length})
+              </button>
+              <button 
+                onClick={() => setTabAdmin('feedback')} 
+                className={`flex-1 py-2 text-[11px] font-bold rounded-xl transition-all ${tabAdmin === 'feedback' ? 'bg-[#1a1a1f] text-white shadow' : 'text-slate-400'}`}
+              >
+                Buzón Mejoras ({listaFeedback.length})
+              </button>
+            </div>
+
+            <div className="overflow-y-auto no-scrollbar space-y-4 flex-1">
+              {tabAdmin === 'verificaciones' ? (
+                listaVerificaciones.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-slate-500 font-bold">No hay solicitudes pendientes.</div>
+                ) : (
+                  listaVerificaciones.map(v => (
+                    <div key={v.id} className="bg-[#09090b] p-4 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-xs font-bold text-white">{v.edificios?.nombre}</p>
+                          <p className="text-[10px] text-slate-400">{v.usuario_email}</p>
+                        </div>
+                        <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded-lg">{v.etiqueta}</span>
                       </div>
-                      <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-1 rounded-lg">{v.etiqueta}</span>
+
+                      <p className="text-xs text-slate-300 italic">"{v.comentario}"</p>
+
+                      {v.doc_verificacion_url && (
+                        <a href={v.doc_verificacion_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl">
+                          <FileText className="w-3.5 h-3.5" /> Ver Documento Subido
+                        </a>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-white/5">
+                        <button onClick={() => responderVerificacion(v.id, true)} className="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all">
+                          <Check className="w-4 h-4" /> Aprobar Badges
+                        </button>
+                        <button onClick={() => responderVerificacion(v.id, false)} className="bg-rose-500/10 text-rose-400 font-bold px-3 py-2.5 rounded-xl text-xs active:scale-95 transition-all">
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-
-                    <p className="text-xs text-slate-300 italic">"{v.comentario}"</p>
-
-                    {v.doc_verificacion_url && (
-                      <a href={v.doc_verificacion_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl">
-                        <FileText className="w-3.5 h-3.5" /> Ver Documento Subido
-                      </a>
-                    )}
-
-                    <div className="flex gap-2 pt-2 border-t border-white/5">
-                      <button onClick={() => responderVerificacion(v.id, true)} className="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 transition-all">
-                        <Check className="w-4 h-4" /> Aprobar Badges
-                      </button>
-                      <button onClick={() => responderVerificacion(v.id, false)} className="bg-rose-500/10 text-rose-400 font-bold px-3 py-2.5 rounded-xl text-xs active:scale-95 transition-all">
-                        <Ban className="w-4 h-4" />
-                      </button>
+                  ))
+                )
+              ) : (
+                listaFeedback.length === 0 ? (
+                  <div className="text-center py-8 text-xs text-slate-500 font-bold">No hay comentarios en el buzón aún.</div>
+                ) : (
+                  listaFeedback.map(f => (
+                    <div key={f.id} className="bg-[#09090b] p-4 rounded-2xl space-y-2.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-lg">{f.tipo}</span>
+                        <span className="text-[10px] text-slate-500">{new Date(f.creado_en).toLocaleDateString('es-CL')}</span>
+                      </div>
+                      <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">{f.mensaje}</p>
+                      <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                        <span className="text-[10px] text-slate-400 font-medium">{f.usuario_email}</span>
+                        <button onClick={() => eliminarFeedbackAdmin(f.id)} className="text-rose-400 hover:text-rose-300 text-[10px] font-bold flex items-center gap-1">
+                          <Trash2 className="w-3.5 h-3.5" /> Borrar
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
+                )
               )}
             </div>
           </div>
